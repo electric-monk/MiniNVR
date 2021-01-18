@@ -33,9 +33,25 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.0\lib\netstandard2.0\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Memory, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.1\lib\netstandard2.0\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.4.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.0\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Web.Services" />
@@ -47,6 +63,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Connected Services\Onvif.PTZ\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
+    <Compile Include="Mp4Helper.cs" />
+    <Compile Include="SpsParser.cs" />
+    <Compile Include="OnvifDiscoverer.cs" />
     <Compile Include="OnvifEvents.cs" />
     <Compile Include="SoapHelper.cs" />
     <Compile Include="Connected Services\Onvif.Event\Reference.cs">
@@ -67,11 +91,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UsernameTokenEndpointBehaviour.cs" />
-    <Compile Include="Web References\onvif.devicemgmt\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.map</DependentUpon>
-    </Compile>
+    <Compile Include="WebInterface.cs" />
+    <Compile Include="WebServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -647,144 +668,87 @@
     <None Include="Connected Services\Onvif.Media\xmlmime.xsd">
       <SubType>Designer</SubType>
     </None>
+    <None Include="Connected Services\Onvif.PTZ\b-2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\bf-2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\common.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\include.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\item.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\onvif.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\PTZService.wsdl" />
+    <None Include="Connected Services\Onvif.PTZ\t-1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.Capabilities.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.ContinuousMoveResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.GetCompatibleConfigurationsResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.GetConfigurationsResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.GetNodesResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.GetPresetsResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.GetPresetToursResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.MoveAndStartTrackingResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.PresetTour.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.PTZConfiguration.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.PTZConfigurationOptions.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.PTZNode.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.PTZPreset.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.PTZPresetTourOptions.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.PTZStatus.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\TestConsole.Onvif.PTZ.SetPresetResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\ws-addr.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\xml.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\Onvif.PTZ\xmlmime.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
     <None Include="Properties\DataSources\System.Xml.XmlElement.datasource" />
-    <None Include="Web References\onvif.devicemgmt\b-2.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\BackupFile.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\bf-2.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\BinaryData.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Capabilities.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Certificate.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\CertificateInformation.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\CertificateStatus.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\common.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\devicemgmt.wsdl" />
-    <None Include="Web References\onvif.devicemgmt\DeviceServiceCapabilities.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\DiscoveryMode.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\DNSInformation.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Dot11AvailableNetworks.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Dot11Capabilities.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Dot11Status.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Dot1XConfiguration.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\DynamicDNSInformation.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\GetSystemUrisResponseExtension.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\HostnameInformation.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\include.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\IPAddressFilter.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\item.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\LocationEntity.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\NetworkGateway.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\NetworkHost.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\NetworkInterface.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\NetworkProtocol.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\NetworkZeroConfiguration.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\NTPInformation.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\onvif.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Reference.map">
-      <Generator>MSDiscoCodeGenerator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\RelayOutput.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\RemoteUser.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Scope.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\Service.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\StorageConfiguration.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\SupportInformation.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\SystemDateTime.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\SystemLog.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\SystemLogUri.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\t-1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\User.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\ws-addr.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\xml.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\onvif.devicemgmt\xmlmime.xsd">
-      <SubType>Designer</SubType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
@@ -793,24 +757,10 @@
     <WebReferences Include="Web References\" />
   </ItemGroup>
   <ItemGroup>
-    <WebReferenceUrl Include="https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl">
-      <UrlBehavior>Dynamic</UrlBehavior>
-      <RelPath>Web References\onvif.devicemgmt\</RelPath>
-      <UpdateFromURL>https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl</UpdateFromURL>
-      <ServiceLocationURL>
-      </ServiceLocationURL>
-      <CachedDynamicPropName>
-      </CachedDynamicPropName>
-      <CachedAppSettingsObjectName>
-      </CachedAppSettingsObjectName>
-      <CachedSettingsPropName>
-      </CachedSettingsPropName>
-    </WebReferenceUrl>
-  </ItemGroup>
-  <ItemGroup>
     <WCFMetadataStorage Include="Connected Services\Onvif.Event\" />
     <WCFMetadataStorage Include="Connected Services\Onvif.Device\" />
     <WCFMetadataStorage Include="Connected Services\Onvif.Media\" />
+    <WCFMetadataStorage Include="Connected Services\Onvif.PTZ\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connected Services\Onvif.Event\configuration91.svcinfo" />
@@ -844,6 +794,32 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Connected Services\Onvif.Media\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ThirdParty\bmff\MatrixIO.IO.Bmff\MatrixIO.IO.Bmff.csproj">
+      <Project>{f5c4c7d7-9951-4072-885c-c6250ebcd807}</Project>
+      <Name>MatrixIO.IO.Bmff</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ThirdParty\onvif-discovery\OnvifDiscovery\OnvifDiscovery.csproj">
+      <Project>{518cf8e2-fb61-4b48-94ed-fa3c5e2470b3}</Project>
+      <Name>OnvifDiscovery</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ThirdParty\RtspClientSharp\RtspClientSharp\RtspClientSharp.csproj">
+      <Project>{4b745a45-5ae6-4e10-be0d-4ec3ae126b6d}</Project>
+      <Name>RtspClientSharp</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Connected Services\Onvif.PTZ\configuration91.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Connected Services\Onvif.PTZ\configuration.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Connected Services\Onvif.PTZ\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
