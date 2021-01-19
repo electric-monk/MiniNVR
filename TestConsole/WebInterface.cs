@@ -11,7 +11,7 @@ namespace TestConsole
 {
     public class WebInterface
     {
-        private class DiscoveryEndpoint : WebServer.Endpoint
+        private class DiscoveryEndpoint : WebServer.IEndpoint
         {
             private readonly OnvifDiscoverer discoverer;
             private readonly List<OnvifDiscoverer.Device> devices;
@@ -95,5 +95,7 @@ namespace TestConsole
             server.AddContent("/discovery", new DiscoveryEndpoint());
             server.Start();
         }
+
+        public WebServer Server { get { return server; } }
     }
 }

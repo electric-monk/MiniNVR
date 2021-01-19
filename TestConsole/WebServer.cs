@@ -9,12 +9,12 @@ namespace TestConsole
 {
     public class WebServer
     {
-        public interface Endpoint
+        public interface IEndpoint
         {
             void Handle(HttpListenerContext request);
         }
 
-        public class StaticContent : Endpoint
+        public class StaticContent : IEndpoint
         {
             public string MimeType { get; set; }
             public byte[] Content { get; set; }
@@ -41,7 +41,7 @@ namespace TestConsole
         private readonly Queue<HttpListenerContext> queue;
         private readonly ManualResetEvent stop;
         private readonly Semaphore waiting;
-        private readonly Dictionary<string, Endpoint> content;
+        private readonly Dictionary<string, IEndpoint> content;
         private readonly ReaderWriterLockSlim contentLock;
 
         private static string MakeError(string title, string subtitle)
@@ -51,7 +51,7 @@ namespace TestConsole
 
         public WebServer(int port, int maxThreads, int maxQueue)
         {
-            content = new Dictionary<string, Endpoint>();
+            content = new Dictionary<string, IEndpoint>();
             contentLock = new ReaderWriterLockSlim();
             listener = new HttpListener();
             listener.Prefixes.Add(string.Format("http://+:{0}/", port));
@@ -72,7 +72,7 @@ namespace TestConsole
         public string Error404 { get; set; }
         public string Error500 { get; set; }
 
-        public void AddContent(string path, Endpoint endpoint)
+        public void AddContent(string path, IEndpoint endpoint)
         {
             contentLock.EnterWriteLock();
             try {
@@ -86,11 +86,11 @@ namespace TestConsole
             }
         }
 
-        private Endpoint GetContent(string path)
+        private IEndpoint GetContent(string path)
         {
             contentLock.EnterReadLock();
             try {
-                Endpoint result;
+                IEndpoint result;
                 if (!content.TryGetValue(path, out result))
                     result = null;
                 return result;
@@ -148,7 +148,7 @@ namespace TestConsole
                     context = queue.Dequeue();
                 }
                 // Handle request
-                Endpoint location = GetContent(context.Request.Url.LocalPath);
+                IEndpoint location = GetContent(context.Request.Url.LocalPath);
                 if (location == null) {
                     GenerateError(context, 404, Error404);
                 } else {
