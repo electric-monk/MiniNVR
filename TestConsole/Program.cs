@@ -14,7 +14,116 @@ namespace TestConsole
 {
     public class Program
     {
-        private static async Task StreamAsync(string rtspUri, string username, string password, CancellationToken token)
+
+        private class HelpyFrame
+        {
+            public event EventHandler<RtspClientSharp.RawFrames.Video.RawH264Frame> OnFrame;
+
+            public void Send(RtspClientSharp.RawFrames.RawFrame frame)
+            {
+                if (frame is RtspClientSharp.RawFrames.Video.RawH264Frame framey)
+                    OnFrame?.Invoke(this, framey);
+            }
+        }
+
+        private static byte[] AppendDataWithStartMarker(byte[][] data)
+        {
+            int total = 0;
+            int i = 0;
+            bool[] prepend = new bool[data.Length];
+            foreach (var part in data) {
+                prepend[i] = SpsParser.FindPattern(part, RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker, 0) != 0;
+                if (prepend[i])
+                    total += RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length;
+                total += part.Length;
+                i++;
+            }
+            if ((prepend.Length == 1) && !prepend[0])
+                return data[0];
+            byte[] result = new byte[total];
+            int j = 0, k = 0;
+            foreach (var part in data) {
+                if (prepend[k]) {
+                    Buffer.BlockCopy(RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker, 0, result, j, RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length);
+                    j += RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length;
+                }
+                Buffer.BlockCopy(part, 0, result, j, part.Length);
+                j += part.Length;
+                k++;
+            }
+            return result;
+        }
+
+        private class LiveVideoEndpoint : WebServer.IEndpoint
+        {
+            private readonly HelpyFrame frameSource;
+
+            public LiveVideoEndpoint(HelpyFrame frameHelper)
+            {
+                frameSource = frameHelper;
+            }
+
+            private class Streamer
+            {
+                private readonly HelpyFrame frameSource;
+                private readonly System.IO.Stream stream;
+                private readonly List<byte[]> samples;
+                private SpsParser parser;
+                private readonly Mp4Helper mp4File;
+
+                public Streamer(HelpyFrame frameHelper, HttpListenerResponse response)
+                {
+                    frameSource = frameHelper;
+                    response.ContentType = "video/mp4";
+                    stream = response.OutputStream;
+                    samples = new List<byte[]>();
+                    mp4File = new Mp4Helper();
+                    frameSource.OnFrame += FrameHandle;
+                }
+
+                private void FrameHandle(object sender, RtspClientSharp.RawFrames.Video.RawH264Frame frame)
+                {
+                    try {
+                        bool isIFrame = false;
+                        if (frame is RtspClientSharp.RawFrames.Video.RawH264IFrame iframe) {
+                            isIFrame = true;
+                            if (parser == null) {
+                                parser = new SpsParser(iframe.SpsPpsSegment.Array);
+                                mp4File.CreateEmptyMP4(parser).SaveTo(stream);
+                            } else {
+                                var boxes = mp4File.CreateChunk(samples.ToArray());
+                                samples.Clear();
+                                foreach (var box in boxes)
+                                    box.ToStream(stream);
+                            }
+                        }
+                        if (parser != null) {
+                            byte[] sample = frame.FrameSegment.ToArray();
+                            byte[][] parts;
+                            if (isIFrame) {
+                                // Apparently, I frame should also be preceded by SPS and PPS, even though they're also in the header.
+                                parts = new byte[][] { parser.Sps, parser.Pps, sample };
+                            } else {
+                                // Check it has a start marker (as we use it to update it to a length marker)
+                                parts = new byte[][] { sample };
+                            }
+                            samples.Add(AppendDataWithStartMarker(parts));
+                        }
+                    }
+                    catch (HttpListenerException) {
+                        frameSource.OnFrame -= FrameHandle;
+                        stream.Close();
+                    }
+                }
+            }
+
+            public void Handle(HttpListenerContext request)
+            {
+                new Streamer(frameSource, request.Response);
+            }
+        }
+
+        private static async Task StreamAsync(HelpyFrame frameHelper, string rtspUri, string username, string password, CancellationToken token)
         {
             try
             {
@@ -22,62 +131,7 @@ namespace TestConsole
                 var parameters = new RtspClientSharp.ConnectionParameters(new Uri(rtspUri), new NetworkCredential(username, password));
                 using (var rtspClient = new RtspClientSharp.RtspClient(parameters))
                 {
-                    Mp4Helper helper = new Mp4Helper();
-                    MatrixIO.IO.Bmff.BaseMedia container = null;
-                    List<byte[]> samples = null;
-                    int count = 0;
-                    SpsParser parser = null;
-
-                    rtspClient.FrameReceived += (sender, frame) => {
-                        string extra = "";
-                        if (frame is RtspClientSharp.RawFrames.Video.RawH264IFrame) {
-                            RtspClientSharp.RawFrames.Video.RawH264IFrame iFrame = (RtspClientSharp.RawFrames.Video.RawH264IFrame)frame;
-                            parser = new SpsParser(iFrame.SpsPpsSegment.Array);
-                            extra = $" [dimensions {parser.Dimensions.Width}x{parser.Dimensions.Height}]";
-                            if (container == null) {
-                                container = helper.CreateEmptyMP4(parser);
-                                samples = new List<byte[]>();
-                            } else {
-                                foreach (var item in helper.CreateChunk(samples.ToArray()))
-                                    container.Children.Add(item);
-                                samples.Clear();
-                                count++;
-                                if (count > 10) {
-                                    count = 0;
-                                    using (var f = System.IO.File.Create("frankentaunt.mp4")) {
-                                        container.SaveTo(f);
-                                    }
-                                }
-                            }
-                        }
-                        if (samples != null) {
-                            byte[] sample = frame.FrameSegment.ToArray();
-                            if (frame is RtspClientSharp.RawFrames.Video.RawH264IFrame) {
-                                // Apparently, I frame should also be preceded by SPS and PPS, even though they're also in the header.
-                                byte[] result = new byte[(RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length * 2) + parser.Sps.Length + parser.Pps.Length + sample.Length];
-                                int i = 0;
-                                Buffer.BlockCopy(RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker, 0, result, i, RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length);
-                                i += RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length;
-                                Buffer.BlockCopy(parser.Sps, 0, result, i, parser.Sps.Length);
-                                i += parser.Sps.Length;
-                                Buffer.BlockCopy(RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker, 0, result, i, RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length);
-                                i += RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length;
-                                Buffer.BlockCopy(parser.Pps, 0, result, i, parser.Pps.Length);
-                                i += parser.Pps.Length;
-                                Buffer.BlockCopy(sample, 0, result, i, sample.Length);
-                                sample = result;
-                            }
-                            if (SpsParser.FindPattern(sample, RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker, 0) == -1) {
-                                byte[] result = new byte[RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length + sample.Length];
-                                Buffer.BlockCopy(RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker, 0, result, 0, RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length);
-                                Buffer.BlockCopy(sample, 0, result, RtspClientSharp.RawFrames.Video.RawH264Frame.StartMarker.Length, sample.Length);
-                                sample = result;
-                            }
-                            samples.Add(sample);
-                            // TODO: Do something sensible with timestamp
-                        }
-                        Console.WriteLine($"New frame {frame.Timestamp}: {frame.GetType().Name} {extra}");
-                    };
+                    rtspClient.FrameReceived += (sender, frame) => frameHelper.Send(frame);
                     while (true)
                     {
                         Console.WriteLine("Connecting...");
@@ -120,7 +174,9 @@ namespace TestConsole
 
         static void Main(string[] args)
         {
+            HelpyFrame frames = new HelpyFrame();
             WebInterface web = new WebInterface();
+            web.Server.AddContent("/stream", new LiveVideoEndpoint(frames));
 
             WSHttpBinding transportBinding = new WSHttpBinding(SecurityMode.None);
             TextMessageEncodingBindingElement encodingBinding = new TextMessageEncodingBindingElement();
@@ -141,7 +197,7 @@ namespace TestConsole
             uri = client.GetStreamUri(new Onvif.Media.StreamSetup(), profiles[0].token);
             Console.Out.WriteLine("Stream URI: {0}", uri.Uri);
 
-            Task streamTask = StreamAsync(uri.Uri, "admin", "Password1", new CancellationTokenSource().Token);
+            Task streamTask = StreamAsync(frames, uri.Uri, "admin", "Password1", new CancellationTokenSource().Token);
 
             string localHost = "10.116.205.15";
             OnvifEvents.NotificationServer listener = new OnvifEvents.NotificationServer();
