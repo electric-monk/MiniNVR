@@ -1,0 +1,42 @@
+.window {
+  position: absolute;
+  top: 80px;
+  background-color: #f0f0f0;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 8px 8px 6px -6px black;
+  opacity: 0.9;
+  overflow: hidden;
+  cursor: default;
+}
+
+.windowTitle {
+  font-weight: bold;
+  font-size: 18;
+  padding: 4px 4px 4px 8px;
+  position: relative;
+  bottom: 2px;
+  background-color: #00f0f0;
+  user-select: none;
+  margin-bottom: 0;
+}
+
+.windowTitleInactive {
+  opacity: 25%;
+}
+
+.windowContent {
+  margin-top: 0;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+body {
+  overflow: hidden;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}

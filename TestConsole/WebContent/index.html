@@ -1,0 +1,27 @@
+<html>
+<head>
+  <title>VideoStar</title>
+  <link rel="stylesheet" href="windows.css">
+  <script src="windows.js"></script>
+</head>
+<body style="background-image: linear-gradient(blue, black)">
+  <p style="font-style: italic; color: white; text-shadow: 4px 4px black; font-size: 400%;">NVR</p>
+  <script>
+    var win = createWindow(800, 400);
+    getWindowTitle(win).innerHTML = "Camera";
+    getWindowContent(win).innerHTML = '<video autoplay style="object-fit: cover; width: 100%; height: 90%" src="http://10.116.205.15:12345/stream?123">Video missing</video>';
+    document.body.appendChild(win);
+
+/*
+    var win = createWindow("auto", "auto", WIN_TITLE);
+    getWindowTitle(win).innerHTML = "Login";
+    getWindowContent(win).innerHTML = '<form><table><tr><td>Username</td><td><input></td></tr><tr><td>Password</td><td><input type="password"></td></tr><tr><td colspan=2 align="right"><br/><input type="button" value="Login"></td></table></form>';
+    document.body.appendChild(win);
+    win.style.position = "fixed";
+    win.style.top = "50%";
+    win.style.left = "50%";
+    win.style.transform = "translate(-50%, -50%)";
+*/
+  </script>
+</body>
+</html>

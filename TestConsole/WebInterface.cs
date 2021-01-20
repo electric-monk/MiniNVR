@@ -92,6 +92,10 @@ namespace TestConsole
         public WebInterface()
         {
             server = new WebServer(12345, 32, 100);
+            // TODO: Auto-find these
+            server.AddContent("/", WebServer.StaticContent.Load("index.html"));
+            server.AddContent("/windows.css", WebServer.StaticContent.Load("windows.css"));
+            server.AddContent("/windows.js", WebServer.StaticContent.Load("windows.js"));
             server.AddContent("/discovery", new DiscoveryEndpoint());
             server.Start();
         }

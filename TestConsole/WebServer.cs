@@ -18,19 +18,48 @@ namespace TestConsole
         {
             public string MimeType { get; set; }
             public byte[] Content { get; set; }
-            public Encoding Encoding { get; set; }
 
-            StaticContent()
+            public StaticContent()
             {
                 MimeType = "text/plain";
                 Content = new byte[0];
+            }
+
+            public static StaticContent Load(string name)
+            {
+                StaticContent result = new StaticContent();
+                var fullname = $"{nameof(TestConsole)}.WebContent.{name}";
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using (System.IO.Stream input = assembly.GetManifestResourceStream(fullname)) {
+                    using (System.IO.MemoryStream output = new System.IO.MemoryStream()) {
+                        byte[] buffer = new byte[16384];
+                        int count;
+                        while ((count = input.Read(buffer, 0, buffer.Length)) != 0)
+                            output.Write(buffer, 0, count);
+                        result.Content = output.ToArray();
+                    }
+                }
+                result.MimeType = System.Web.MimeMapping.GetMimeMapping(name);
+                if (result.MimeType.StartsWith("text"))
+                    result.MimeType += "; charset=utf-8";
+                return result;
+            }
+
+            public static void LoadAll(string path, WebServer server)
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                string fullpath = $"{nameof(TestConsole)}.WebContent.{path}";
+                foreach (var s in assembly.GetManifestResourceNames().Where(s => s.StartsWith(fullpath))) {
+                    string minpath = s.Substring(fullpath.Length);
+
+                }
             }
 
             public void Handle(HttpListenerContext request)
             {
                 HttpListenerResponse response = request.Response;
                 response.ContentLength64 = Content.Length;
-                response.ContentEncoding = Encoding;
+                response.ContentType = MimeType;
                 response.OutputStream.Write(Content, 0, Content.Length);
                 response.Close();
             }
