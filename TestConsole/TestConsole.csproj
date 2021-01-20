@@ -85,11 +85,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
-    <Compile Include="Mp4Helper.cs" />
-    <Compile Include="SpsParser.cs" />
-    <Compile Include="OnvifDiscoverer.cs" />
-    <Compile Include="OnvifEvents.cs" />
-    <Compile Include="SoapHelper.cs" />
+    <Compile Include="MP4\Mp4Helper.cs" />
+    <Compile Include="MP4\SpsParser.cs" />
+    <Compile Include="Onvif\Discoverer.cs" />
+    <Compile Include="Onvif\Events.cs" />
+    <Compile Include="Onvif\Soap\SoapHelper.cs" />
     <Compile Include="Connected Services\Onvif.Event\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -107,7 +107,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UsernameTokenEndpointBehaviour.cs" />
+    <Compile Include="Onvif\Soap\UsernameTokenEndpointBehaviour.cs" />
     <Compile Include="WebInterface.cs" />
     <Compile Include="WebServer.cs" />
   </ItemGroup>

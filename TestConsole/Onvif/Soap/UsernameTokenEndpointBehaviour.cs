@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.ServiceModel.Description;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Dispatcher;
@@ -10,7 +7,7 @@ using System.Xml;
 using System.Security.Cryptography;
 using System.ServiceModel;
 
-namespace TestConsole
+namespace TestConsole.Onvif.Soap
 {
     class UsernameTokenEndpointBehaviour : IEndpointBehavior
     {

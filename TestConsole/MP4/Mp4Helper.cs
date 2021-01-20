@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using MatrixIO.IO;
 using System.Collections;
 using MatrixIO.IO.Bmff;
 
-namespace TestConsole
+namespace TestConsole.MP4
 {
     class Mp4Helper
     {

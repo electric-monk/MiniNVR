@@ -13,16 +13,16 @@ namespace TestConsole
     {
         private class DiscoveryEndpoint : WebServer.IEndpoint
         {
-            private readonly OnvifDiscoverer discoverer;
-            private readonly List<OnvifDiscoverer.Device> devices;
+            private readonly Onvif.Discoverer discoverer;
+            private readonly List<Onvif.Discoverer.Device> devices;
             private readonly Timer timeoutTimer;
             private object token;
             private int timeoutCount;
 
             public DiscoveryEndpoint()
             {
-                discoverer = new OnvifDiscoverer();
-                devices = new List<OnvifDiscoverer.Device>();
+                discoverer = new Onvif.Discoverer();
+                devices = new List<Onvif.Discoverer.Device>();
                 timeoutTimer = new Timer(TimeoutCallback);
             }
 
@@ -60,7 +60,7 @@ namespace TestConsole
             private Dictionary<string, Dictionary<string, object>> NormalisedData()
             {
                 Dictionary<string, Dictionary<string, object>> result = new Dictionary<string, Dictionary<string, object>>();
-                foreach (OnvifDiscoverer.Device device in devices) {
+                foreach (Onvif.Discoverer.Device device in devices) {
                     Dictionary<string, object> properties = new Dictionary<string, object>();
                     properties.Add("Manufacturer", device.Manufacturer);
                     properties.Add("Model", device.Model);
@@ -71,16 +71,16 @@ namespace TestConsole
                 return result;
             }
 
-            private class Watcher : OnvifDiscoverer.IListener
+            private class Watcher : Onvif.Discoverer.IListener
             {
-                private readonly List<OnvifDiscoverer.Device> devices;
+                private readonly List<Onvif.Discoverer.Device> devices;
 
-                public Watcher(List<OnvifDiscoverer.Device> d)
+                public Watcher(List<Onvif.Discoverer.Device> d)
                 {
                     devices = d;
                 }
 
-                public void FoundDevice(OnvifDiscoverer.Device device)
+                public void FoundDevice(Onvif.Discoverer.Device device)
                 {
                     devices.Add(device);
                 }

@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace TestConsole
+namespace TestConsole.Onvif
 {
-    class OnvifEvents
+    class Events
     {
         public class NotificationServer
         {
@@ -89,7 +86,7 @@ namespace TestConsole
             return result;
         }
 
-        public class OnvifEvent
+        public class Event
         {
             public string Topic { get; }
             public DateTime Timestamp { get;  }
@@ -99,7 +96,7 @@ namespace TestConsole
 
             public Dictionary<string, string> Data { get; }
 
-            public OnvifEvent(string topic, DateTime time, string type, XmlElement sourceElement, XmlElement dataElement)
+            public Event(string topic, DateTime time, string type, XmlElement sourceElement, XmlElement dataElement)
             {
                 Topic = topic;
                 Timestamp = time;
@@ -109,7 +106,7 @@ namespace TestConsole
             }
         }
 
-        public static OnvifEvent[] ParseEvents(System.IO.Stream input)
+        public static Event[] ParseEvents(System.IO.Stream input)
         {
             XmlSerializer bodySerialiser = new XmlSerializer(typeof(Onvif.Event.Notify), new XmlRootAttribute
             {
@@ -117,8 +114,8 @@ namespace TestConsole
                 IsNullable = false,
                 Namespace = "http://docs.oasis-open.org/wsn/b-2"
             });
-            Onvif.Event.Notify body = (Onvif.Event.Notify)bodySerialiser.Deserialize(SoapHelper.StripEnvelope(input));
-            List<OnvifEvent> results = new List<OnvifEvent>();
+            Onvif.Event.Notify body = (Onvif.Event.Notify)bodySerialiser.Deserialize(Soap.SoapHelper.StripEnvelope(input));
+            List<Event> results = new List<Event>();
             foreach(Onvif.Event.NotificationMessageHolderType holder in body.NotificationMessage)
             {
                 XmlElement source = null, data = null;
@@ -130,7 +127,7 @@ namespace TestConsole
                     else if (name.Equals("Data"))
                         data = child;
                 }
-                results.Add(new OnvifEvent(StripName(holder.Topic.Any[0].Value), DateTime.Parse(holder.Message.GetAttribute("UtcTime")), holder.Message.GetAttribute("PropertyOperation"), source, data));
+                results.Add(new Event(StripName(holder.Topic.Any[0].Value), DateTime.Parse(holder.Message.GetAttribute("UtcTime")), holder.Message.GetAttribute("PropertyOperation"), source, data));
             }
             return results.ToArray();
         }

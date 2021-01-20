@@ -1,7 +1,7 @@
 ﻿using System.Xml;
 using System.Xml.Serialization;
 
-namespace TestConsole
+namespace TestConsole.Onvif.Soap
 {
     public class SoapHelper
     {

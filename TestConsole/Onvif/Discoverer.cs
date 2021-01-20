@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TestConsole
+namespace TestConsole.Onvif
 {
-    public class OnvifDiscoverer : IDisposable
+    public class Discoverer : IDisposable
     {
         private readonly Dictionary<int, IListener> listeners;
         private readonly List<Device> currentDevices;
@@ -45,7 +44,7 @@ namespace TestConsole
             void FoundDevice(Device device);
         }
 
-        public OnvifDiscoverer()
+        public Discoverer()
         {
             listeners = new Dictionary<int, IListener>();
             currentDevices = new List<Device>();
