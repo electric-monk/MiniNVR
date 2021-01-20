@@ -86,8 +86,11 @@ namespace TestConsole
             listener.Prefixes.Add(string.Format("http://+:{0}/", port));
             workers = new Thread[maxThreads + 1];
             workers[0] = new Thread(ListenerThread);
-            for (int i = 1; i < workers.Length; i++)
+            workers[0].Name = $"Server{port}.Listener";
+            for (int i = 1; i < workers.Length; i++) {
                 workers[i] = new Thread(WorkerThread);
+                workers[i].Name = $"Server{port}.Worker{i}";
+            }
             Port = port;
             queue = new Queue<HttpListenerContext>(maxQueue);
             stop = new ManualResetEvent(false);
