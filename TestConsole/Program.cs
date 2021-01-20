@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,10 +20,26 @@ namespace TestConsole
         {
             public event EventHandler<RtspClientSharp.RawFrames.Video.RawH264Frame> OnFrame;
 
+            private static ArraySegment<byte> SaveBuffer(ArraySegment<byte> buffer)
+            {
+                return new ArraySegment<byte>(buffer.ToArray());
+            }
+
+            public static RtspClientSharp.RawFrames.Video.RawH264Frame CopyFrame(RtspClientSharp.RawFrames.Video.RawH264Frame frame)
+            {
+                RtspClientSharp.RawFrames.Video.RawH264Frame duplicate = null;
+                if (frame is RtspClientSharp.RawFrames.Video.RawH264IFrame iFrame) {
+                    duplicate = new RtspClientSharp.RawFrames.Video.RawH264IFrame(iFrame.Timestamp, SaveBuffer(iFrame.FrameSegment), SaveBuffer(iFrame.SpsPpsSegment));
+                } else if (frame is RtspClientSharp.RawFrames.Video.RawH264PFrame pFrame) {
+                    duplicate = new RtspClientSharp.RawFrames.Video.RawH264PFrame(pFrame.Timestamp, SaveBuffer(pFrame.FrameSegment));
+                }
+                return duplicate;
+            }
+
             public void Send(RtspClientSharp.RawFrames.RawFrame frame)
             {
                 if (frame is RtspClientSharp.RawFrames.Video.RawH264Frame framey)
-                    OnFrame?.Invoke(this, framey);
+                    OnFrame?.Invoke(this, CopyFrame(framey));
             }
         }
 
@@ -65,6 +82,8 @@ namespace TestConsole
 
             private class Streamer
             {
+                private readonly new BlockingCollection<RtspClientSharp.RawFrames.Video.RawH264Frame> queue;
+                private readonly Thread queueThread;
                 private readonly HelpyFrame frameSource;
                 private readonly System.IO.Stream stream;
                 private readonly List<byte[]> samples;
@@ -73,15 +92,31 @@ namespace TestConsole
 
                 public Streamer(HelpyFrame frameHelper, HttpListenerResponse response)
                 {
+                    queue = new BlockingCollection<RtspClientSharp.RawFrames.Video.RawH264Frame>(new ConcurrentQueue<RtspClientSharp.RawFrames.Video.RawH264Frame>());
+                    queueThread = new Thread(WorkerThread);
+                    queueThread.Name = "MP4 Streamer";
                     frameSource = frameHelper;
                     response.ContentType = "video/mp4";
                     stream = response.OutputStream;
                     samples = new List<byte[]>();
                     mp4File = new MP4.Mp4Helper();
                     frameSource.OnFrame += FrameHandle;
+                    queueThread.Start();
                 }
 
                 private void FrameHandle(object sender, RtspClientSharp.RawFrames.Video.RawH264Frame frame)
+                {
+                    queue.Add(frame);
+                }
+                private void WorkerThread()
+                {
+                    while (true) {
+                        if (!HandleFrame(queue.Take()))
+                            break;
+                    }
+                }
+
+                private bool HandleFrame(RtspClientSharp.RawFrames.Video.RawH264Frame frame)
                 {
                     try {
                         bool isIFrame = false;
@@ -109,10 +144,12 @@ namespace TestConsole
                             }
                             samples.Add(AppendDataWithStartMarker(parts));
                         }
+                        return true;
                     }
                     catch (HttpListenerException) {
                         frameSource.OnFrame -= FrameHandle;
                         stream.Close();
+                        return false;
                     }
                 }
             }
