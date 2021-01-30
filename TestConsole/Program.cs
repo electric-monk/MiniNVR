@@ -209,7 +209,39 @@ namespace TestConsole
             }
         }
 
+        private class Server
+        {
+            private readonly WebInterface web;
+            private readonly Streamer.CameraManager cameraManager;
+
+            public Server()
+            {
+                web = new WebInterface();
+                cameraManager = new Streamer.CameraManager();
+                Configuration.Database.Instance.Cameras.OnCameraUpdated += OnCameraChanged;
+                foreach (var cam in Configuration.Database.Instance.Cameras.AllCameras)
+                    OnCameraChanged(this, new Configuration.Cameras.CameraEvent() { AddedUpdated = true, ChangedCamera = cam });
+            }
+
+            private void OnCameraChanged(object sender, Configuration.Cameras.CameraEvent change)
+            {
+                WebServer.IEndpoint endpoint = null;
+                if (change.AddedUpdated)
+                    endpoint = new Streamer.Utils.WebStream(cameraManager.GetCamera(change.ChangedCamera.Identifier));
+                web.Server.AddContent("/stream-" + change.ChangedCamera.Identifier, endpoint);
+            }
+        }
+
         static void Main(string[] args)
+        {
+            Server server = new Server();
+            Console.WriteLine("Server up");
+            // TODO: some sort of shutdown strategy
+            while (true)
+                Thread.Sleep(10000000);
+        }
+
+        static void oldMain(string[] args)
         {
             HelpyFrame frames = new HelpyFrame();
             WebInterface web = new WebInterface();

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace TestConsole.MP4
 {
-    class SpsParser
+    public class SpsParser
     {
         public struct FrameSize
         {

@@ -51,7 +51,7 @@ namespace TestConsole
                 string fullpath = $"{nameof(TestConsole)}.WebContent.{path}";
                 foreach (var s in assembly.GetManifestResourceNames().Where(s => s.StartsWith(fullpath))) {
                     string minpath = s.Substring(fullpath.Length);
-
+                    server.AddContent("/" + minpath, Load(minpath));
                 }
             }
 
@@ -180,11 +180,16 @@ namespace TestConsole
                     context = queue.Dequeue();
                 }
                 // Handle request
-                IEndpoint location = GetContent(context.Request.Url.LocalPath);
-                if (location == null) {
-                    GenerateError(context, 404, Error404);
-                } else {
-                    location.Handle(context);
+                try {
+                    IEndpoint location = GetContent(context.Request.Url.LocalPath);
+                    if (location == null) {
+                        GenerateError(context, 404, Error404);
+                    } else {
+                        location.Handle(context);
+                    }
+                }
+                catch (Exception e) {
+                    Console.WriteLine("Error occurred during web request handling: " + e.ToString());
                 }
             }
         }
