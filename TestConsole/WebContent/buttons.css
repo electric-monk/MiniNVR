@@ -1,0 +1,59 @@
+.toolbar {
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
+  background-color: #a0a0a0;
+  z-index: 100000;
+  border-top: 1px solid black;
+}
+
+.button {
+  box-sizing: inset;
+  cursor: pointer;
+  background-color: #a0a0a0;
+  width: auto;
+  height: auto;
+  display: inline-block;
+  margin: 1px;
+}
+
+.buttonOff {
+  border-left: 2px solid rgba(255, 255, 255, 1);
+  border-top: 2px solid rgba(255, 255, 255, 1);
+  border-right: 2px solid rgba(0, 0, 0, 1);
+  border-bottom: 2px solid rgba(0, 0, 0, 1);
+}
+
+.buttonOn {
+  border-right: 2px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+  border-left: 2px solid rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(0, 0, 0, 0.5);
+}
+
+.menu {
+  background-color: #a0a0a0;
+  position: absolute;
+  bottom: 36px;
+  left: 2px;
+  border-left: 2px solid rgba(255, 255, 255, 1);
+  border-top: 2px solid rgba(255, 255, 255, 1);
+  border-right: 2px solid rgba(0, 0, 0, 1);
+  border-bottom: 2px solid rgba(0, 0, 0, 1);
+}
+
+.menucontainer {
+  position: relative;
+  display: inline-block;
+}
+
+.menuitem {
+  white-space: nowrap;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.menuitem:hover {
+  background-color: #0000f0;
+  color: #ffffff;
+}

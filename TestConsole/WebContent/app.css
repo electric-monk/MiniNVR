@@ -1,0 +1,50 @@
+body {
+  overflow: hidden;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+.cameraList {
+  border-right: 2px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+  border-left: 2px solid rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(0, 0, 0, 0.5);
+  margin: 2px 2px 2px 2px;
+  background-color: white;
+  float: left;
+  width: 25%;
+  height: 96%; /* Find out why calc(100% - 8px) breaks here */
+  overflow-y: scroll;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+.cameraSettings {
+  width: auto;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.cameraKnown {
+  white-space: nowrap;
+}
+.cameraUnknown {
+  white-space: nowrap;
+  opacity: 25%;
+}
+.cameraUnselected {
+}
+.cameraSelected {
+  background-color: #0000f0;
+  color: #ffffff;
+}
+
+.cameraView {
+  pointer-events: none;
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
+}

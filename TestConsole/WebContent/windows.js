@@ -111,6 +111,8 @@ function createWindow(width, height, flags = WIN_SIZABLE | WIN_MOVABLE | WIN_TIT
       closeButton.innerHTML = "<b>&#x2715;</b>";
       closeButton.onclick = function() {
         win.parentElement.removeChild(win);
+        if (win._onclosed)
+          win._onclosed();
       }
       title.appendChild(closeButton);
     }
@@ -146,6 +148,7 @@ function createWindow(width, height, flags = WIN_SIZABLE | WIN_MOVABLE | WIN_TIT
     sizer.onmousedown = sizeMouseDown;
   }
   // Done
+  win._activate = activateWindow;
   return win;
 }
 
@@ -157,4 +160,48 @@ function getWindowTitle(win) {
 
 function getWindowContent(win) {
   return win._content;
+}
+
+function createTabs() {
+  var div = document.createElement("div");
+  div.classList.add("tabs");
+  var tabs = document.createElement("div");
+  tabs.classList.add("tabBar");
+  div._tabbar = tabs;
+  div.appendChild(div._tabbar);
+  var spacer = document.createElement("div");
+  spacer.classList.add("tabSpacer");
+  spacer.innerHTML = "&nbsp;";
+  tabs.appendChild(spacer);
+  var content = document.createElement("div");
+  content.classList.add("tabPageContainer");
+  div._content = content;
+  div.appendChild(div._content);
+  function focusButton(button) {
+    for (var btn of tabs.childNodes) {
+      btn.classList.remove("tabSelected");
+      btn.classList.add("tabUnselected");
+    }
+    button.classList.add("tabSelected");
+    button.classList.remove("tabUnselected");
+    for (var page of content.childNodes)
+      page.style.display = "none";
+    button._content.style.display = null;
+  }
+  div._addTab = function(name) {
+    var button = document.createElement("div");
+    button.classList.add("tabItem");
+    button.onmousedown = function(e) {
+      focusButton(button);
+    }
+    button.innerHTML = name;
+    tabs.insertBefore(button, spacer);
+    var contents = document.createElement("div");
+    contents.classList.add("tabPage");
+    content.appendChild(contents);
+    button._content = contents;
+    focusButton(tabs.childNodes[0]);
+    return contents;
+  }
+  return div;
 }
