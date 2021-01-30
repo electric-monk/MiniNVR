@@ -572,18 +572,14 @@ namespace TestConsole.MP4
         private static byte[] Flatten(IEnumerable<byte[]> data)
         {
             int total = 0;
-            IEnumerable<byte> taunt = null;
-            foreach (byte[] sample in data) {
-                if (taunt == null)
-                    taunt = sample;
-                else
-                    taunt = taunt.Concat(sample);
+            foreach (byte[] sample in data)
                 total += sample.Length;
-            }
             byte[] result = new byte[total];
             int i = 0;
-            foreach (byte b in taunt)
-                result[i++] = b;
+            foreach (byte[] sample in data) {
+                Buffer.BlockCopy(sample, 0, result, i, sample.Length);
+                i += sample.Length;
+            }
             return result;
         }
     }
