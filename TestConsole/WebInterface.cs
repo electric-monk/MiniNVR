@@ -11,7 +11,69 @@ namespace TestConsole
 {
     public class WebInterface
     {
-        private class DiscoveryEndpoint : WebServer.IEndpoint
+        private abstract class JSONEndpoint : WebServer.IEndpoint
+        {
+            public abstract void Handle(HttpListenerContext request);
+
+            protected static void Reply(HttpListenerContext request, object data)
+            {
+                byte[] result = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
+                HttpListenerResponse response = request.Response;
+                response.ContentLength64 = result.Length;
+                response.ContentType = "text/json";
+                response.OutputStream.Write(result, 0, result.Length);
+                response.OutputStream.Close();
+            }
+        }
+
+        private class CameraListEndpoint : JSONEndpoint
+        {
+            public override void Handle(HttpListenerContext request)
+            {
+                Dictionary<string, Dictionary<string, object>> values = new Dictionary<string, Dictionary<string, object>>();
+                foreach (var camera in Configuration.Database.Instance.Cameras.AllCameras) {
+                    Dictionary<string, object> properties = new Dictionary<string, object>();
+                    properties["title"] = camera.FriendlyName;
+                    properties["endpoint"] = camera.Endpoint;
+                    if (camera.Credentials != null) {
+                        properties["username"] = camera.Credentials.Username;
+                        properties["password"] = camera.Credentials.Password;
+                    }
+                    properties["record"] = camera.ShouldRecord;
+                    values.Add(camera.Identifier, properties);
+                }
+                Reply(request, values);
+            }
+        }
+
+        private class CameraUpdateEndpoint : JSONEndpoint
+        {
+            public override void Handle(HttpListenerContext request)
+            {
+                string body;
+                using (var reader = new System.IO.StreamReader(request.Request.InputStream, request.Request.ContentEncoding))
+                    body = reader.ReadToEnd();
+                var cameraData = JsonConvert.DeserializeObject<Dictionary<string, string>>(body);
+
+                Configuration.Cameras.Camera camera = new Configuration.Cameras.Camera() {
+                    Identifier = cameraData["identifier"],
+                    FriendlyName = cameraData["title"],
+                    Endpoint = cameraData["endpoint"],
+                };
+                if ((cameraData["username"].Length != 0) || (cameraData["password"].Length != 0)) {
+                    camera.Credentials = new Configuration.Cameras.Camera.CredentialInfo() {
+                        Username = cameraData["username"],
+                        Password = cameraData["password"],
+                    };
+                }
+                camera.ShouldRecord = cameraData["record"] == "true";
+                Configuration.Database.Instance.Cameras.AddCamera(camera);
+
+                Reply(request, true);
+            }
+        }
+
+        private class DiscoveryEndpoint : JSONEndpoint
         {
             private readonly Onvif.Discoverer discoverer;
             private readonly List<Onvif.Discoverer.Device> devices;
@@ -26,7 +88,7 @@ namespace TestConsole
                 timeoutTimer = new Timer(TimeoutCallback);
             }
 
-            public void Handle(HttpListenerContext request)
+            public override void Handle(HttpListenerContext request)
             {
                 lock (timeoutTimer) {
                     if (token == null)
@@ -34,12 +96,7 @@ namespace TestConsole
                     timeoutCount = 0;
                     timeoutTimer.Change(0, 1000);
                 }
-                byte[] result = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(NormalisedData()));
-                HttpListenerResponse response = request.Response;
-                response.ContentLength64 = result.Length;
-                response.ContentType = "text/json";
-                response.OutputStream.Write(result, 0, result.Length);
-                response.OutputStream.Close();
+                Reply(request, NormalisedData());
             }
 
             private void TimeoutCallback(Object stateInfo)
@@ -94,9 +151,10 @@ namespace TestConsole
             server = new WebServer(12345, 32, 100);
             // TODO: Auto-find these
             server.AddContent("/", WebServer.StaticContent.Load("index.html"));
-            server.AddContent("/windows.css", WebServer.StaticContent.Load("windows.css"));
-            server.AddContent("/windows.js", WebServer.StaticContent.Load("windows.js"));
+            WebServer.StaticContent.LoadAll("", server);
             server.AddContent("/discovery", new DiscoveryEndpoint());
+            server.AddContent("/updateCamera", new CameraUpdateEndpoint());
+            server.AddContent("/allCameras", new CameraListEndpoint());
             server.Start();
         }
 
