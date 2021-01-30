@@ -81,6 +81,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\Cameras.cs" />
+    <Compile Include="Configuration\Database.cs" />
+    <Compile Include="Configuration\Storage.cs" />
+    <Compile Include="Configuration\Users.cs" />
     <Compile Include="Connected Services\Onvif.PTZ\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -88,8 +92,11 @@
     </Compile>
     <Compile Include="MP4\Mp4Helper.cs" />
     <Compile Include="MP4\SpsParser.cs" />
+    <Compile Include="Onvif\BaseService.cs" />
+    <Compile Include="Onvif\DeviceLink.cs" />
     <Compile Include="Onvif\Discoverer.cs" />
     <Compile Include="Onvif\Events.cs" />
+    <Compile Include="Onvif\MediaLink.cs" />
     <Compile Include="Onvif\Soap\SoapHelper.cs" />
     <Compile Include="Connected Services\Onvif.Event\Reference.cs">
       <AutoGen>True</AutoGen>
@@ -109,6 +116,11 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Onvif\Soap\UsernameTokenEndpointBehaviour.cs" />
+    <Compile Include="Streamer\Camera.cs" />
+    <Compile Include="Streamer\CameraManager.cs" />
+    <Compile Include="Streamer\Recorder\DataFile.cs" />
+    <Compile Include="Streamer\Utils\StreamWatcher.cs" />
+    <Compile Include="Streamer\Utils\WebStream.cs" />
     <Compile Include="WebInterface.cs" />
     <Compile Include="WebServer.cs" />
   </ItemGroup>
