@@ -108,10 +108,15 @@ namespace TestConsole
         {
             contentLock.EnterWriteLock();
             try {
-                if (content.ContainsKey(path))
+                if (content.ContainsKey(path)) {
                     content.Remove(path);
-                if (endpoint != null)
+                    if (endpoint == null)
+                        Console.WriteLine("Unregistering " + path);
+                }
+                if (endpoint != null) {
                     content.Add(path, endpoint);
+                    Console.WriteLine("Registering " + path);
+                }
             }
             finally {
                 contentLock.ExitWriteLock();

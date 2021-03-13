@@ -336,7 +336,7 @@ namespace TestConsole.MP4
         private uint sequenceCounter;
         private uint totalCount;
 
-        public BaseMedia CreateEmptyMP4(SpsParser videoData)
+        public BaseMedia CreateEmptyMP4(Mp4Metadata videoData)
         {
             var test = new BaseMedia();
             {// File type

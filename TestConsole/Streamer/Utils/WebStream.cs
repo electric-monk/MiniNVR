@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.IO;
 using System.Threading;
 
@@ -10,48 +8,59 @@ namespace TestConsole.Streamer.Utils
 {
     public class WebStream : WebServer.IEndpoint
     {
-        private Camera camera;
+        public interface FrameSource {
+            event EventHandler<Utils.StreamWatcher.InfoEvent> OnFrameInfo;
+            event EventHandler<Utils.StreamWatcher.FrameSetEvent> OnFrames;
+            string Description { get; }
+        }
 
-        public WebStream(Camera source)
+        public interface StreamSource
         {
-            camera = source;
+            FrameSource SourceForRequest(HttpListenerRequest request);
+        }
+
+        private StreamSource streamSource;
+
+        public WebStream(StreamSource source)
+        {
+            streamSource = source;
         }
 
         public void Handle(HttpListenerContext request)
         {
             // TODO: Check credentials
-            new Streamer(camera, request.Response);
+            new Streamer(streamSource.SourceForRequest(request.Request), request.Response);
         }
 
         private class Streamer
         {
             // TODO: If the camera is deleted before the stream starts, will this ever notice, or just leak?
 
-            private readonly Camera camera;
+            private readonly FrameSource frameSource;
             private readonly BlockingCollection<StreamWatcher.InfoEvent> queue;
             private readonly Thread thread;
             private readonly Stream stream;
 
-            public Streamer(Camera camera, HttpListenerResponse response)
+            public Streamer(FrameSource source, HttpListenerResponse response)
             {
-                this.camera = camera;
+                frameSource = source;
                 queue = new BlockingCollection<StreamWatcher.InfoEvent>(new ConcurrentQueue<StreamWatcher.InfoEvent>());
                 thread = new Thread(WorkerThread);
-                thread.Name = "Web Streamer " + camera.Identifier;
+                thread.Name = "Web Streamer " + frameSource.Description;
                 response.ContentType = "video/mp4";
                 response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
                 response.AddHeader("Pragma", "no-cache");
                 response.AddHeader("Expires", "0");
                 stream = response.OutputStream;
                 thread.Start();
-                camera.OnFrameInfo += HandleFrameInfo;
+                frameSource.OnFrameInfo += HandleFrameInfo;
             }
 
             private void HandleFrameInfo(object sender, StreamWatcher.InfoEvent info)
             {
                 queue.Add(info);
-                camera.OnFrames += HandleFrames;
-                camera.OnFrameInfo -= HandleFrameInfo;
+                frameSource.OnFrames += HandleFrames;
+                frameSource.OnFrameInfo -= HandleFrameInfo;
             }
 
             private void HandleFrames(object sender, StreamWatcher.FrameSetEvent frames)
@@ -86,7 +95,7 @@ namespace TestConsole.Streamer.Utils
                     }
                 }
                 finally {
-                    camera.OnFrames -= HandleFrames;
+                    frameSource.OnFrames -= HandleFrames;
                     stream.Close();
                 }
             }

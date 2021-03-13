@@ -27,7 +27,10 @@ namespace TestConsole.Configuration
             //Users.OnChange += (s, e) => Save();
             if (Cameras == null)
                 Cameras = new Cameras();
-            Cameras.OnCameraUpdated += (s, e) => Save();
+            Cameras.OnUpdated += (s, e) => Save();
+            if (Storage == null)
+                Storage = new Storage();
+            Storage.OnUpdated += (s, e) => Save();
         }
 
         private static Database Load()

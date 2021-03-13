@@ -39,7 +39,8 @@ namespace TestConsole
                         properties["username"] = camera.Credentials.Username;
                         properties["password"] = camera.Credentials.Password;
                     }
-                    properties["record"] = camera.ShouldRecord;
+                    if (camera.StorageIdentifier != null)
+                        properties["record"] = camera.StorageIdentifier;
                     values.Add(camera.Identifier, properties);
                 }
                 Reply(request, values);
@@ -66,8 +67,46 @@ namespace TestConsole
                         Password = cameraData["password"],
                     };
                 }
-                camera.ShouldRecord = cameraData["record"] == "true";
-                Configuration.Database.Instance.Cameras.AddCamera(camera);
+                if (cameraData["record"] != "")
+                    camera.StorageIdentifier = cameraData["Storage"];
+                Configuration.Database.Instance.Cameras.Add(camera);
+
+                Reply(request, true);
+            }
+        }
+
+        private class StorageListEndpoint : JSONEndpoint
+        {
+            public override void Handle(HttpListenerContext request)
+            {
+                Dictionary<string, Dictionary<string, object>> values = new Dictionary<string, Dictionary<string, object>>();
+                foreach (var container in Configuration.Database.Instance.Storage.AllContainers) {
+                    Dictionary<string, object> properties = new Dictionary<string, object>();
+                    properties["title"] = container.FriendlyName;
+                    properties["filename"] = container.LocalFileName;
+                    properties["size"] = container.MaximumSize;
+                    values.Add(container.Identifier, properties);
+                }
+                Reply(request, values);
+            }
+        }
+
+        private class StorageUpdateEndpoint : JSONEndpoint
+        {
+            public override void Handle(HttpListenerContext request)
+            {
+                string body;
+                using (var reader = new System.IO.StreamReader(request.Request.InputStream, request.Request.ContentEncoding))
+                    body = reader.ReadToEnd();
+                var containerData = JsonConvert.DeserializeObject<Dictionary<string, object>>(body);
+
+                Configuration.Storage.Container container = new Configuration.Storage.Container() {
+                    Identifier = (string)containerData["identifier"],
+                    FriendlyName = (string)containerData["title"],
+                    LocalFileName = (string)containerData["filename"],
+                    MaximumSize = (UInt64)containerData["size"],
+                };
+                Configuration.Database.Instance.Storage.Add(container);
 
                 Reply(request, true);
             }
@@ -149,12 +188,13 @@ namespace TestConsole
         public WebInterface()
         {
             server = new WebServer(12345, 32, 100);
-            // TODO: Auto-find these
             server.AddContent("/", WebServer.StaticContent.Load("index.html"));
             WebServer.StaticContent.LoadAll("", server);
             server.AddContent("/discovery", new DiscoveryEndpoint());
             server.AddContent("/updateCamera", new CameraUpdateEndpoint());
             server.AddContent("/allCameras", new CameraListEndpoint());
+            server.AddContent("/updateStorage", new StorageUpdateEndpoint());
+            server.AddContent("/allStorage", new StorageListEndpoint());
             server.Start();
         }
 

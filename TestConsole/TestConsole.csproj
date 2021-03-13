@@ -82,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\Cameras.cs" />
+    <Compile Include="Configuration\ConfigurableList.cs" />
     <Compile Include="Configuration\Database.cs" />
     <Compile Include="Configuration\Storage.cs" />
     <Compile Include="Configuration\Users.cs" />
@@ -91,6 +92,7 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="MP4\Mp4Helper.cs" />
+    <Compile Include="MP4\Mp4Metadata.cs" />
     <Compile Include="MP4\SpsParser.cs" />
     <Compile Include="Onvif\BaseService.cs" />
     <Compile Include="Onvif\DeviceLink.cs" />
@@ -118,7 +120,10 @@
     <Compile Include="Onvif\Soap\UsernameTokenEndpointBehaviour.cs" />
     <Compile Include="Streamer\Camera.cs" />
     <Compile Include="Streamer\CameraManager.cs" />
+    <Compile Include="Streamer\Recorder\FileFormat\CircularFile.cs" />
     <Compile Include="Streamer\Recorder\DataFile.cs" />
+    <Compile Include="Streamer\Recorder\FileFormat\Header.cs" />
+    <Compile Include="Streamer\StorageManager.cs" />
     <Compile Include="Streamer\Utils\StreamWatcher.cs" />
     <Compile Include="Streamer\Utils\WebStream.cs" />
     <Compile Include="WebInterface.cs" />

@@ -82,7 +82,7 @@ namespace TestConsole.Streamer
 
         private void WorkThread()
         {
-            while (!stop.IsSet) {
+            do {
                 try {
                     // Get device link - takes a few moments, as this has to query the device
                     deviceLink = new Onvif.DeviceLink(settings);
@@ -99,6 +99,10 @@ namespace TestConsole.Streamer
                     Console.WriteLine($"Failed to access camera {settings.Identifier}, retrying shortly: " + e.ToString());
                     Thread.Sleep(1000);
                 }
+            } while (streamUri == null);
+            while (!stop.IsSet) {
+                // TODO: Some sort of ongoing work? Or are we done?
+                Thread.Sleep(1000);
             }
         }
 

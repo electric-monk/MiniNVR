@@ -8,10 +8,11 @@ namespace TestConsole.Streamer.Utils
 {
     public class StreamWatcher
     {
-        private readonly new BlockingCollection<RtspClientSharp.RawFrames.Video.RawH264Frame> queue;
+        private readonly BlockingCollection<RtspClientSharp.RawFrames.Video.RawH264Frame> queue;
         private readonly Thread queueThread;
         private readonly List<byte[]> samples;
         private MP4.SpsParser parser;
+        private DateTime lastTimestamp;
 
         internal StreamWatcher()
         {
@@ -42,13 +43,17 @@ namespace TestConsole.Streamer.Utils
 
         public class InfoEvent : EventArgs
         {
-            public MP4.SpsParser StreamInfo { get; set; }
+            public MP4.Mp4Metadata StreamInfo { get; set; }
+
+            public DateTime StartTimestamp { get; set; }
         }
 
         public class FrameSetEvent : InfoEvent
         {
             // Pre-processed frames, ready for insertion into e.g. an MP4 file
             public byte[][] RawFrames { get; set; }
+
+            public DateTime EndTimestamp { get; set; }
         }
 
         internal EventHandler<InfoEvent> OnFrameInfo;
@@ -71,11 +76,12 @@ namespace TestConsole.Streamer.Utils
             if (frame is RtspClientSharp.RawFrames.Video.RawH264IFrame iframe) {
                 isIFrame = true;
                 if (parser != null) {
-                    OnFrames?.Invoke(this, new FrameSetEvent { StreamInfo = parser, RawFrames = samples.ToArray() });
+                    OnFrames?.Invoke(this, new FrameSetEvent { StartTimestamp = lastTimestamp, EndTimestamp = iframe.Timestamp, StreamInfo = parser, RawFrames = samples.ToArray() });
                     samples.Clear();
                 }
+                lastTimestamp = iframe.Timestamp;
                 parser = new MP4.SpsParser(iframe.SpsPpsSegment.ToArray());
-                OnFrameInfo?.Invoke(this, new InfoEvent { StreamInfo = parser });
+                OnFrameInfo?.Invoke(this, new InfoEvent { StartTimestamp = lastTimestamp, StreamInfo = parser });
             }
             if (parser != null) {
                 byte[] sample = frame.FrameSegment.ToArray();
