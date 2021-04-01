@@ -25,8 +25,14 @@ namespace TestConsole.Configuration
         }
 
         [XmlArray("Cameras")]
-        public Camera[] AllCameras => AllItems;
-
+        public Camera[] AllCameras {
+            get {
+                return AllItems;
+            }
+            set {
+                AllItems = value;
+            }
+        }
 
     }
 }

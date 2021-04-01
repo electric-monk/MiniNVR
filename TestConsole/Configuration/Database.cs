@@ -38,10 +38,12 @@ namespace TestConsole.Configuration
             Database result;
             try {
                 XmlSerializer serialiser = new XmlSerializer(typeof(Database));
-                using (TextReader writer = new StreamReader(Filename))
-                    result = (Database)serialiser.Deserialize(writer);
+                using (TextReader reader = new StreamReader(Filename))
+                    result = (Database)serialiser.Deserialize(reader);
+                Console.WriteLine("Settings loaded");
             }
             catch (FileNotFoundException) {
+                Console.WriteLine("No configuration file found - creating a new one");
                 result = new Database();
             }
             catch (InvalidOperationException) {
@@ -75,9 +77,11 @@ namespace TestConsole.Configuration
         {
             lock (this) {
                 if (changing != 0) {
+                    Console.WriteLine("Ignoring save due to pending changes");
                     dirty++;
                     return;
                 }
+                Console.WriteLine("Saving settings");
                 XmlSerializer serialiser = new XmlSerializer(typeof(Database));
                 using (TextWriter writer = new StreamWriter(Filename))
                     serialiser.Serialize(writer, this);

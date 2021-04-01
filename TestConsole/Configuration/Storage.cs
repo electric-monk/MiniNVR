@@ -15,6 +15,14 @@ namespace TestConsole.Configuration
         }
 
         [XmlArray("Containers")]
-        public Container[] AllContainers => AllItems;
+        public Container[] AllContainers
+        {
+            get {
+                return AllItems;
+            }
+            set {
+                AllItems = value;
+            }
+        }
     }
 }
