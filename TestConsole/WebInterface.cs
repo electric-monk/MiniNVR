@@ -68,7 +68,7 @@ namespace TestConsole
                     };
                 }
                 if (cameraData["record"] != "")
-                    camera.StorageIdentifier = cameraData["Storage"];
+                    camera.StorageIdentifier = cameraData["record"];
                 Configuration.Database.Instance.Cameras.Add(camera);
 
                 Reply(request, true);
@@ -104,7 +104,7 @@ namespace TestConsole
                     Identifier = (string)containerData["identifier"],
                     FriendlyName = (string)containerData["title"],
                     LocalFileName = (string)containerData["filename"],
-                    MaximumSize = (UInt64)containerData["size"],
+                    MaximumSize = UInt64.Parse((string)containerData["size"]),
                 };
                 Configuration.Database.Instance.Storage.Add(container);
 

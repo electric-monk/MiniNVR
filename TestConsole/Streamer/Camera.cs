@@ -56,14 +56,25 @@ namespace TestConsole.Streamer
 
         public Uri SnapshotUri { get { return snapshotUri; } }
 
+        private EventHandler<Utils.StreamWatcher.InfoEvent> WrappedOnFrameInfo;
+        private void WrappingOnFrameInfo(object sender, Utils.StreamWatcher.InfoEvent info)
+        {
+            WrappedOnFrameInfo?.Invoke(this, info);
+        }
+        private EventHandler<Utils.StreamWatcher.FrameSetEvent> WrappedOnFrame;
+        private void WrappingOnFrame(object sender, Utils.StreamWatcher.FrameSetEvent frames)
+        {
+            WrappedOnFrame?.Invoke(this, frames);
+        }
+
         public event EventHandler<Utils.StreamWatcher.InfoEvent> OnFrameInfo
         {
             add {
                 StartStream();
-                streamWatcher.OnFrameInfo += value;
+                WrappedOnFrameInfo += value;
             }
             remove {
-                streamWatcher.OnFrameInfo -= value;
+                WrappedOnFrameInfo -= value;
                 StopStream();
             }
         }
@@ -72,10 +83,10 @@ namespace TestConsole.Streamer
         {
             add {
                 StartStream();
-                streamWatcher.OnFrames += value;
+                WrappedOnFrame += value;
             }
             remove {
-                streamWatcher.OnFrames -= value;
+                WrappedOnFrame -= value;
                 StopStream();
             }
         }
@@ -112,6 +123,8 @@ namespace TestConsole.Streamer
                 if (viewers == 0) {
                     cancellationTokenSource = new CancellationTokenSource();
                     streamTask = StreamAsync(cancellationTokenSource.Token);
+                    streamWatcher.OnFrameInfo += WrappingOnFrameInfo;
+                    streamWatcher.OnFrames += WrappingOnFrame;
                 }
                 viewers++;
             }
@@ -124,6 +137,8 @@ namespace TestConsole.Streamer
                 if (viewers < 0)
                     viewers = 0;
                 if (fin || (viewers == 0)) {
+                    streamWatcher.OnFrameInfo -= WrappingOnFrameInfo;
+                    streamWatcher.OnFrames -= WrappingOnFrame;
                     cancellationTokenSource.Cancel();
                     if (streamTask == null)
                         return;

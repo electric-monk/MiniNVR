@@ -121,7 +121,7 @@ namespace TestConsole.Streamer.Recorder.FileFormat
 
         private static UInt32 ComputeChecksum(IEnumerable<byte> data)
         {
-            UInt32 result = 0;
+            UInt32 result = 0xAA55AA55;
             foreach (byte b in data) {
                 result ^= b;
                 result = ((result & 0x80000000) >> 7) | ((result & 0x7FFFFFFF) << 1);

@@ -91,8 +91,8 @@ namespace TestConsole.Streamer.Recorder
                         currentHeader.Timestamp = frameSet.StartTimestamp;
                         currentHeader.Duration = frameSet.EndTimestamp - frameSet.StartTimestamp;
                         file.SaveHeader(currentHeader);
-                        currentHeader.FrameData = null;
-                        currentHeader.Tags.Clear();
+                        // Reset our current header
+                        recordingCameras[currentHeader.Identifier] = new RecordHeader() { Identifier = currentHeader.Identifier };
                     }
                 }
                 if (frame.Search != null) {
@@ -183,6 +183,11 @@ namespace TestConsole.Streamer.Recorder
             private byte loadedIdentifierLength;
             private LoadedParts loadedParts;
 
+            public RecordHeader()
+            {
+                loadedParts = LoadedParts.Frame | LoadedParts.Identifier | LoadedParts.Tags;
+            }
+
             public LoadedParts Loaded { get { return loadedParts; } }
 
             public String Identifier { get; set; } = "";
@@ -254,6 +259,7 @@ namespace TestConsole.Streamer.Recorder
                 loadedIdentifierLength = reader.ReadByte();
                 Timestamp = DateTime.FromBinary(reader.ReadInt64());
                 Duration = TimeSpan.FromTicks(reader.ReadInt64());
+                loadedParts = 0;
             }
 
             protected override void SaveData(BinaryWriter writer)
@@ -278,11 +284,16 @@ namespace TestConsole.Streamer.Recorder
 
             protected override void SaveExtraHeader(BinaryWriter writer)
             {
-                byte idLength = (byte)Encoding.UTF8.GetByteCount(Identifier);
-                UInt16 dataOffset = idLength;
-                foreach (var tag in Tags)
-                    dataOffset += (UInt16)(11 + Encoding.UTF8.GetByteCount(tag.Name) + tag.Data.Length);
-                writer.Write((byte)Tags.Count);
+                byte idLength = (byte)(loadedParts.HasFlag(LoadedParts.Identifier) ? Encoding.UTF8.GetByteCount(Identifier) : loadedIdentifierLength);
+                UInt16 dataOffset;
+                if (loadedParts.HasFlag(LoadedParts.Tags)) {
+                    dataOffset = idLength;
+                    foreach (var tag in Tags)
+                        dataOffset += (UInt16)(11 + Encoding.UTF8.GetByteCount(tag.Name) + tag.Data.Length);
+                } else {
+                    dataOffset = loadedDataOffset;
+                }
+                writer.Write((byte)(loadedParts.HasFlag(LoadedParts.Tags) ? Tags.Count : loadedTagCount));
                 writer.Write(dataOffset);
                 writer.Write((byte)idLength);
                 writer.Write(Timestamp.ToBinary());
