@@ -11,7 +11,7 @@ namespace TestConsole
 {
     public class WebInterface
     {
-        private abstract class JSONEndpoint : WebServer.IEndpoint
+        public abstract class JSONEndpoint : WebServer.IEndpoint
         {
             public abstract void Handle(HttpListenerContext request);
 

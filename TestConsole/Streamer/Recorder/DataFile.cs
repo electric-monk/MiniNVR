@@ -18,10 +18,10 @@ namespace TestConsole.Streamer.Recorder
 
         public interface SearchResults
         {
-            void VideoStarts(string identifier, DateTime timestamp);
-            void VideoTag(string identifier, DateTime timestamp, string name, byte[] data);
-            void VideoStops(string identifier, DateTime timestamp);
-            void VideoSearched();
+            void VideoStarts(string storageIdentifier, string cameraIdentifier, DateTime timestamp);
+            void VideoTag(string storageIdentifier, string cameraIdentifier, DateTime timestamp, string name, byte[] data);
+            void VideoStops(string storageIdentifier, string cameraIdentifier, DateTime timestamp);
+            void VideoSearched(string storageIdentifier);
         }
 
         public DataFile(Configuration.Storage.Container container)
@@ -45,7 +45,7 @@ namespace TestConsole.Streamer.Recorder
                 queue.Add(data);
         }
 
-        public void SearchTimes(string identifier, DateTime start, DateTime end, SearchResults callback)
+        public void SearchTimes(string identifier, DateTime? start, DateTime? end, SearchResults callback)
         {
             queue.Add(new FrameData(identifier) { Search = new SearchRequest() { Start = start, End = end, Callback = callback } });
         }
@@ -85,8 +85,8 @@ namespace TestConsole.Streamer.Recorder
                     if (frame.TagInfo != null)
                         currentHeader.Tags.Add(frame.TagInfo);
                     if (frame.RawFrame is FrameSetEvent frameSet) {
-                        currentHeader.Tags.Add(new Tag() { Name = "PPS", Data = frameSet.StreamInfo.Pps });
-                        currentHeader.Tags.Add(new Tag() { Name = "SPS", Data = frameSet.StreamInfo.Sps });
+                        currentHeader.Tags.Add(new Tag() { Name = "PPS", Timestamp = DateTime.MinValue, Data = frameSet.StreamInfo.Pps });
+                        currentHeader.Tags.Add(new Tag() { Name = "SPS", Timestamp = DateTime.MinValue, Data = frameSet.StreamInfo.Sps });
                         currentHeader.FrameData = frameSet.RawFrames;
                         currentHeader.Timestamp = frameSet.StartTimestamp;
                         currentHeader.Duration = frameSet.EndTimestamp - frameSet.StartTimestamp;
@@ -106,22 +106,27 @@ namespace TestConsole.Streamer.Recorder
                     while (seeking != null) {
                         if ((frame.Search.End != null) && (seeking.Timestamp > frame.Search.End))
                             break;
+                        file.LoadData(seeking, RecordHeader.LoadedParts.Identifier | RecordHeader.LoadedParts.Tags);
                         if ((frame.Identifier == null) || frame.Identifier.Equals(seeking.Identifier)) {
+                            bool doStart = true;
                             if (foundEnds.ContainsKey(seeking.Identifier)) {
                                 DateTime lastTime = foundEnds[seeking.Identifier];
                                 if (seeking.Timestamp != lastTime)
-                                    frame.Search.Callback.VideoStops(seeking.Identifier, lastTime);
+                                    frame.Search.Callback.VideoStops(settings.Identifier, seeking.Identifier, lastTime);
+                                else
+                                    doStart = false;
                             }
-                            frame.Search.Callback.VideoStarts(seeking.Identifier, seeking.Timestamp);
+                            if (doStart)
+                                frame.Search.Callback.VideoStarts(settings.Identifier, seeking.Identifier, seeking.Timestamp);
                             foreach (var tag in seeking.Tags)
-                                frame.Search.Callback.VideoTag(seeking.Identifier, tag.Timestamp, tag.Name, tag.Data);
+                                frame.Search.Callback.VideoTag(settings.Identifier, seeking.Identifier, tag.Timestamp, tag.Name, tag.Data);
                             foundEnds[seeking.Identifier] = seeking.Timestamp + seeking.Duration;
                         }
-                        seeking = file.GetHeader((UInt32)seeking.NextHeader);
+                        seeking = (seeking.NextHeader == -1) ? null : file.GetHeader((UInt32)seeking.NextHeader);
                     }
                     foreach (KeyValuePair<string, DateTime> kvp in foundEnds)
-                        frame.Search.Callback.VideoStops(kvp.Key, kvp.Value);
-                    frame.Search.Callback.VideoSearched();
+                        frame.Search.Callback.VideoStops(settings.Identifier, kvp.Key, kvp.Value);
+                    frame.Search.Callback.VideoSearched(settings.Identifier);
                 }
                 if (frame.Streamer != null) {
                     if (frame.Streamer.CurrentHeader == null)
@@ -136,8 +141,8 @@ namespace TestConsole.Streamer.Recorder
 
         private class SearchRequest
         {
-            public DateTime Start { get; set; }
-            public DateTime End { get; set; }
+            public DateTime? Start { get; set; }
+            public DateTime? End { get; set; }
             public SearchResults Callback { get; set; }
         }
 
