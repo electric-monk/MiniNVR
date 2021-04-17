@@ -140,13 +140,13 @@ namespace TestConsole
 
                         ItemState result;
                         if (getStream)
-                            result = new SearchItemState(context);
-                        else
                             result = new StreamItemState(context);
+                        else
+                            result = new SearchItemState(context);
                         foreach (var container in searchContainers) {
                             var storage = storageManager.GetStorage(container.Identifier);
                             if (storage != null) {
-                                storage.SearchTimes(cameraIdentifier, start, end, false, this);
+                                storage.SearchTimes(cameraIdentifier, start, end, getStream, this);
                                 result.expecting++;
                             }
                         }
@@ -160,8 +160,7 @@ namespace TestConsole
 
                     public void VideoTag(string storageIdentifier, string cameraIdentifier, DateTime timestamp, string name, byte[] data)
                     {
-                        if (timestamp != DateTime.MinValue)
-                            queue.Add(new Tag() { StorageIdentifier = storageIdentifier, CameraIdentifier = cameraIdentifier, Timestamp = timestamp, Name = name, Data = data });
+                        queue.Add(new Tag() { StorageIdentifier = storageIdentifier, CameraIdentifier = cameraIdentifier, Timestamp = timestamp, Name = name, Data = data });
                     }
 
                     public void VideoStops(string storageIdentifier, string cameraIdentifier, DateTime timestamp)
@@ -183,9 +182,10 @@ namespace TestConsole
                     {
                         protected readonly HttpListenerContext context;
 
-                        protected ItemState(HttpListenerContext context)
+                        protected ItemState(HttpListenerContext context, string contentType)
                         {
                             this.context = context;
+                            context.Response.ContentType = contentType;
                         }
 
                         public int expecting = 0;
@@ -201,7 +201,7 @@ namespace TestConsole
                         private readonly System.IO.Stream stream;
                         private StreamDataMaker maker = new StreamDataMaker();
                         public StreamItemState(HttpListenerContext context)
-                        : base(context)
+                        : base(context, "video/mp4")
                         {
                             stream = context.Response.OutputStream;
                         }
@@ -255,10 +255,13 @@ namespace TestConsole
                     {
                         public readonly Dictionary<string, List<TimeItem>> tracks = new Dictionary<string, List<TimeItem>>();
 
-                        public SearchItemState(HttpListenerContext context) : base(context) { }
+                        public SearchItemState(HttpListenerContext context) : base(context, "application/json") { }
 
                         public override void Update(TimeItem item)
                         {
+                            if (item is Tag tag)
+                                if (tag.Timestamp == DateTime.MinValue)
+                                    return;
                             if (!tracks.ContainsKey(item.CameraIdentifier))
                                 tracks.Add(item.CameraIdentifier, new List<TimeItem>());
                             tracks[item.CameraIdentifier].Add(item);
