@@ -9,8 +9,6 @@ namespace TestConsole.MP4
         private readonly byte[] sps;
         private readonly byte[] pps;
 
-        private FrameSize dimensions;
-
         public SpsParser(byte[] spspps)
         {
             byte[][] parts = Split(spspps);
