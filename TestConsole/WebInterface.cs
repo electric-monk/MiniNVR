@@ -20,6 +20,9 @@ namespace TestConsole
                 byte[] result = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
                 HttpListenerResponse response = request.Response;
                 response.ContentLength64 = result.Length;
+                response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                response.AddHeader("Pragma", "no-cache");
+                response.AddHeader("Expires", "0");
                 response.ContentType = "text/json";
                 response.OutputStream.Write(result, 0, result.Length);
                 response.OutputStream.Close();
