@@ -20,6 +20,7 @@ namespace TestConsole.Streamer.Recorder
         {
             void VideoStarts(string storageIdentifier, string cameraIdentifier, DateTime timestamp);
             void VideoTag(string storageIdentifier, string cameraIdentifier, DateTime timestamp, string name, byte[] data);
+            void VideoData(string storageIdentifier, string cameraIdentifier, byte[][] frameData);
             void VideoStops(string storageIdentifier, string cameraIdentifier, DateTime timestamp);
             void VideoSearched(string storageIdentifier);
         }
@@ -45,9 +46,9 @@ namespace TestConsole.Streamer.Recorder
                 queue.Add(data);
         }
 
-        public void SearchTimes(string identifier, DateTime? start, DateTime? end, SearchResults callback)
+        public void SearchTimes(string identifier, DateTime? start, DateTime? end, bool getVideo, SearchResults callback)
         {
-            queue.Add(new FrameData(identifier) { Search = new SearchRequest() { Start = start, End = end, Callback = callback } });
+            queue.Add(new FrameData(identifier) { Search = new SearchRequest() { Start = start, End = end, Callback = callback, GetVideoData = getVideo } });
         }
 
         public Streamer.Utils.WebStream.FrameSource GetFrameSourceForRecording(string identifier, DateTime start)
@@ -121,6 +122,10 @@ namespace TestConsole.Streamer.Recorder
                             foreach (var tag in seeking.Tags)
                                 frame.Search.Callback.VideoTag(settings.Identifier, seeking.Identifier, tag.Timestamp, tag.Name, tag.Data);
                             foundEnds[seeking.Identifier] = seeking.Timestamp + seeking.Duration;
+                            if (frame.Search.GetVideoData) {
+                                file.LoadData(seeking, RecordHeader.LoadedParts.Frame);
+                                frame.Search.Callback.VideoData(settings.Identifier, seeking.Identifier, seeking.FrameData);
+                            }
                         }
                         seeking = (seeking.NextHeader == -1) ? null : file.GetHeader((UInt32)seeking.NextHeader);
                     }
@@ -144,6 +149,7 @@ namespace TestConsole.Streamer.Recorder
             public DateTime? Start { get; set; }
             public DateTime? End { get; set; }
             public SearchResults Callback { get; set; }
+            public bool GetVideoData { get; set; }
         }
 
         private class FrameData

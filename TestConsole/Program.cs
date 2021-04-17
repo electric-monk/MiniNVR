@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Concurrent;
-using System.Threading;
+using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using TestConsole.Streamer.Utils;
-using Newtonsoft.Json;
 
 namespace TestConsole
 {
@@ -70,8 +70,8 @@ namespace TestConsole
                         ItemState state = InitiateRequests(context.Request);
                         while (state.expecting != 0)
                             queue.Take().Update(ref state);
-                        TidyUp(state);
-                        GenerateResponse(state);
+                        state.TidyUp();
+                        state.GenerateResponse();
                         queue.CompleteAdding();
                     }
 
@@ -107,6 +107,18 @@ namespace TestConsole
                             end = null;
                         }
 
+                        bool getStream;
+                        string videoStr;
+                        if ((requestData != null) && requestData.TryGetValue("video", out videoStr)) {
+                            getStream = bool.Parse(videoStr);
+                        } else {
+                            getStream = false;
+                        }
+
+                        if (getStream && ((start == null) || (end == null) || (storageIdentifier == null) || (cameraIdentifier == null))) {
+                            throw new ArgumentException("Start and end times and storage and camera identifiers are all required to produce a video stream");
+                        }
+
                         Configuration.Storage.Container[] searchContainers = Configuration.Database.Instance.Storage.AllContainers;
                         if (storageIdentifier != null) {
                             Configuration.Storage.Container found = null;
@@ -122,50 +134,23 @@ namespace TestConsole
                                 searchContainers = new Configuration.Storage.Container[] { found };
                         }
 
-                        ItemState result = new ItemState();
+                        if (getStream && (searchContainers.Length == 0)) {
+                            throw new ArgumentException("No video found");
+                        }
+
+                        ItemState result;
+                        if (getStream)
+                            result = new SearchItemState(context);
+                        else
+                            result = new StreamItemState(context);
                         foreach (var container in searchContainers) {
                             var storage = storageManager.GetStorage(container.Identifier);
                             if (storage != null) {
-                                storage.SearchTimes(cameraIdentifier, start, end, this);
+                                storage.SearchTimes(cameraIdentifier, start, end, false, this);
                                 result.expecting++;
                             }
                         }
                         return result;
-                    }
-
-                    private void TidyUp(ItemState state)
-                    {
-                        foreach (var track in state.tracks.Values) {
-                            // Sort by time
-                            track.Sort((TimeItem a, TimeItem b) => a.Timestamp.CompareTo(b.Timestamp));
-                            // Remove stop/start pairs that are at the same time
-                            // TODO: Confirm I even need to do this
-                            List<int> toRemove = new List<int>();
-                            for (int i = 0; i < (track.Count - 1); i++) {
-                                if (!(track[i] is Stop))
-                                    continue;
-                                if (!(track[i + 1] is Start))
-                                    continue;
-                                if (track[i].SimilarTime(track[i + 1])) {
-                                    toRemove.Insert(0, i);
-                                    i++;
-                                }
-                            }
-                            foreach (int i in toRemove)
-                                track.RemoveRange(i, 2);
-                        }
-                    }
-
-                    private void GenerateResponse(ItemState state)
-                    {
-                        Dictionary<string, List<Dictionary<string, object>>> results = new Dictionary<string, List<Dictionary<string, object>>>();
-                        foreach (var track in state.tracks) {
-                            List<Dictionary<string, object>> data = new List<Dictionary<string, object>>();
-                            foreach (var entry in track.Value)
-                                data.Add(entry.Generate());
-                            results.Add(track.Key, data);
-                        }
-                        Reply(context, results);
                     }
 
                     public void VideoStarts(string storageIdentifier, string cameraIdentifier, DateTime timestamp)
@@ -184,16 +169,137 @@ namespace TestConsole
                         queue.Add(new Stop() { StorageIdentifier = storageIdentifier, CameraIdentifier = cameraIdentifier, Timestamp = timestamp });
                     }
 
+                    public void VideoData(string storageIdentifier, string cameraIdentifier, byte[][] data)
+                    {
+                        queue.Add(new Data() { StorageIdentifier = storageIdentifier, CameraIdentifier = cameraIdentifier, FrameData = data });
+                    }
+
                     public void VideoSearched(string storageIdentifier)
                     {
                         queue.Add(new Done() { StorageIdentifier = storageIdentifier });
                     }
 
-                    private class ItemState
+                    private abstract class ItemState
                     {
+                        protected readonly HttpListenerContext context;
+
+                        protected ItemState(HttpListenerContext context)
+                        {
+                            this.context = context;
+                        }
+
                         public int expecting = 0;
-                        public readonly Dictionary<string, List<TimeItem>> tracks = new Dictionary<string, List<TimeItem>>();
+                        public abstract void Update(TimeItem item);
+                        public virtual void TidyUp() { }
+                        public abstract void GenerateResponse();
+                        public virtual void OnFrameData(byte[][] data) { }
                     }
+
+                    private class StreamItemState : ItemState
+                    {
+                        private readonly MP4.Mp4Helper mp4Helper = new MP4.Mp4Helper();
+                        private readonly System.IO.Stream stream;
+                        private StreamDataMaker maker = new StreamDataMaker();
+                        public StreamItemState(HttpListenerContext context)
+                        : base(context)
+                        {
+                            stream = context.Response.OutputStream;
+                        }
+                        public override void Update(TimeItem item)
+                        {
+                            if (maker != null) {
+                                if (item is Tag tag) {
+                                    maker.Add(tag);
+                                    if (maker.Complete) {
+                                        mp4Helper.CreateEmptyMP4(maker).SaveTo(stream);
+                                        maker = null;
+                                    }
+                                }
+                            }
+                        }
+                        public override void GenerateResponse()
+                        {
+                            context.Response.Close();
+                        }
+                        public override void OnFrameData(byte[][] data)
+                        {
+                            if (maker == null) {
+                                var boxes = mp4Helper.CreateChunk(data);
+                                foreach (var box in boxes)
+                                    box.ToStream(stream);
+                            }
+                        }
+
+                        private class StreamDataMaker : MP4.Mp4Metadata
+                        {
+                            private byte[] sps = null;
+                            private byte[] pps = null;
+
+                            public void Add(Tag tag)
+                            {
+                                if (tag.Name == "PPS")
+                                    pps = tag.Data;
+                                else if (tag.Name == "SPS")
+                                    sps = tag.Data;
+                            }
+
+                            public bool Complete => (pps != null) && (sps != null);
+
+                            public override byte[] Sps => sps;
+
+                            public override byte[] Pps => pps;
+                        }
+                    }
+
+                    private class SearchItemState : ItemState
+                    {
+                        public readonly Dictionary<string, List<TimeItem>> tracks = new Dictionary<string, List<TimeItem>>();
+
+                        public SearchItemState(HttpListenerContext context) : base(context) { }
+
+                        public override void Update(TimeItem item)
+                        {
+                            if (!tracks.ContainsKey(item.CameraIdentifier))
+                                tracks.Add(item.CameraIdentifier, new List<TimeItem>());
+                            tracks[item.CameraIdentifier].Add(item);
+                        }
+
+                        public override void TidyUp()
+                        {
+                            foreach (var track in tracks.Values) {
+                                // Sort by time
+                                track.Sort((TimeItem a, TimeItem b) => a.Timestamp.CompareTo(b.Timestamp));
+                                // Remove stop/start pairs that are at the same time
+                                // TODO: Confirm I even need to do this
+                                List<int> toRemove = new List<int>();
+                                for (int i = 0; i < (track.Count - 1); i++) {
+                                    if (!(track[i] is Stop))
+                                        continue;
+                                    if (!(track[i + 1] is Start))
+                                        continue;
+                                    if (track[i].SimilarTime(track[i + 1])) {
+                                        toRemove.Insert(0, i);
+                                        i++;
+                                    }
+                                }
+                                foreach (int i in toRemove)
+                                    track.RemoveRange(i, 2);
+                            }
+                        }
+
+                        public override void GenerateResponse()
+                        {
+                            Dictionary<string, List<Dictionary<string, object>>> results = new Dictionary<string, List<Dictionary<string, object>>>();
+                            foreach (var track in tracks) {
+                                List<Dictionary<string, object>> data = new List<Dictionary<string, object>>();
+                                foreach (var entry in track.Value)
+                                    data.Add(entry.Generate());
+                                results.Add(track.Key, data);
+                            }
+                            Reply(context, results);
+                        }
+                    }
+
                     private abstract class Item
                     {
                         public string StorageIdentifier { get; set; }
@@ -210,9 +316,7 @@ namespace TestConsole
                         public string CameraIdentifier { get; set; }
                         public override void Update(ref ItemState state)
                         {
-                            if (!state.tracks.ContainsKey(CameraIdentifier))
-                                state.tracks.Add(CameraIdentifier, new List<TimeItem>());
-                            state.tracks[CameraIdentifier].Add(this);
+                            state.Update(this);
                         }
                         public bool SimilarTime(TimeItem other)
                         {
@@ -247,6 +351,16 @@ namespace TestConsole
                             result.Add("name", Name);
                             result.Add("data", Data);
                             return result;
+                        }
+                    }
+                    private class Data : Item
+                    {
+                        public Data() : base() { }
+                        public string CameraIdentifier { get; set; }
+                        public byte[][] FrameData { get; set; }
+                        public override void Update(ref ItemState state)
+                        {
+                            state.OnFrameData(FrameData);
                         }
                     }
                     private class Stop : TimeItem
