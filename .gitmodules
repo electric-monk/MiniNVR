@@ -1,0 +1,9 @@
+[submodule "ThirdParty/bmff"]
+	path = ThirdParty/bmff
+	url = https://github.com/electric-monk/bmff.git
+[submodule "ThirdParty/RtspClientSharp"]
+	path = ThirdParty/RtspClientSharp
+	url = https://github.com/BogdanovKirill/RtspClientSharp
+[submodule "ThirdParty/OnvifDiscovery"]
+	path = ThirdParty/onvif-discovery
+	url = https://github.com/vmartos/onvif-discovery

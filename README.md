@@ -29,8 +29,11 @@ In order:
 
 ## Building
 
-Currently the project is slightly wrong, I need to shuffle around the git subdirectories and add submodules for dependencies. Until I do so you must create a directory in the parent directory of the repo called ThirdParty, and clone these git repos into it:
+A Dockerfile is provided that has been tested under Debian, and should successfully build all dependencies and the server itself. You can launch it with a command like:
+docker run -p 8080:12345 mininvr
+This will cause it to start listening on port 8080 of the host machine.
 
+These are the dependencies, which are included as git submodules:
 - https://github.com/electric-monk/bmff.git (my fork of https://github.com/heksesang/bmff.git, fixes some issues with saving MP4s)
 - https://github.com/vmartos/onvif-discovery
 - https://github.com/BogdanovKirill/RtspClientSharp
