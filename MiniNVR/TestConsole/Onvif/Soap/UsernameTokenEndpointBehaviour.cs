@@ -6,6 +6,8 @@ using System.ServiceModel.Dispatcher;
 using System.Xml;
 using System.Security.Cryptography;
 using System.ServiceModel;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace TestConsole.Onvif.Soap
 {
@@ -24,7 +26,16 @@ namespace TestConsole.Onvif.Soap
 
         public void ApplyClientBehavior(ServiceEndpoint endpoint, ClientRuntime clientRuntime)
         {
-            clientRuntime.ClientMessageInspectors.Add(inspector);
+            ICollection<IClientMessageInspector> clientMessageInspectors;
+            try {
+                clientMessageInspectors = clientRuntime.ClientMessageInspectors;
+            }
+            catch (NotImplementedException) {
+                // This happens on mono, where we must do some horrible things
+                var prop = clientRuntime.GetType().GetTypeInfo().GetDeclaredProperty("MessageInspectors");
+                clientMessageInspectors = (ICollection<IClientMessageInspector>)prop.GetValue(clientRuntime);
+            }
+            clientMessageInspectors.Add(inspector);
         }
 
         public void ApplyDispatchBehavior(ServiceEndpoint endpoint, EndpointDispatcher endpointDispatcher)
