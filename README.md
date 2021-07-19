@@ -32,7 +32,9 @@ In order:
 ## Building
 
 A Dockerfile is provided that has been tested under Debian, and should successfully build all dependencies and the server itself. You can launch it with a command like:
+
 docker run -p 8080:12345 mininvr
+
 This will cause it to start listening on port 8080 of the host machine. Note that the default Docker network settings will prevent onvif discovery from working, so you'll need to tweak settings (host networking will work, but other options may be better if you have a more complex IP camera network set up).
 
 These are the dependencies, which are included as git submodules:
