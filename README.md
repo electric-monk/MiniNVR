@@ -2,6 +2,8 @@
 
 A small NVR application for ONVIF cameras
 
+[![Docker Image CI](https://github.com/electric-monk/MiniNVR/actions/workflows/docker-image.yml/badge.svg)](https://github.com/electric-monk/MiniNVR/actions/workflows/docker-image.yml)
+
 ## Purpose
 
 Sad at the state of Open Source CCTV applications, none of which really meet the baseline of even the cheapest dedicated NVR (which are usually even based on Linux, but with a proprietary app), I decided I needed to create something that could achieve a similar level of usability.
