@@ -20,10 +20,11 @@ I chose C# for managed safety, to protect from buffer overruns, underruns, gene
 ## TODOs
 
 In order:
-- Recording (this is currently WIP, some code is written but it's untested, and there's no UI to try it)
+- Recording (this is currently WIP, you can create storage files and assign them to cameras and it'll record, but there's no web UI to playback and it occasionally crashes)
 - Events (these will be saved in tags on the recording, and appear on the timeline as highlights)
 - PTZ (should be simple)
 - Security (currently there's no login screen, should also be simple)
+- Chrome can't seem to stream via MSE (but it works fine in Safari and Firefox)
 
 ## Screenshot
 
