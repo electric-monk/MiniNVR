@@ -862,21 +862,26 @@
   <ItemGroup>
     <EmbeddedResource Include="WebContent\index.html" />
     <EmbeddedResource Include="WebContent\windows.css" />
-    <EmbeddedResource Include="WebContent\windows.js" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="WebContent\app.css" />
     <EmbeddedResource Include="WebContent\app.js" />
     <EmbeddedResource Include="WebContent\backup_devices_2-0.png" />
     <EmbeddedResource Include="WebContent\buttons.css" />
-    <EmbeddedResource Include="WebContent\buttons.js" />
     <EmbeddedResource Include="WebContent\camera_2-0.png" />
     <EmbeddedResource Include="WebContent\camera_2-1.png" />
     <EmbeddedResource Include="WebContent\client.js" />
     <EmbeddedResource Include="WebContent\gears-0.png" />
     <EmbeddedResource Include="WebContent\gears-1.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="WebContent\form.js" />
+    <EmbeddedResource Include="WebContent\recordparse.js" />
+    <EmbeddedResource Include="WebContent\timeline.css" />
+    <EmbeddedResource Include="WebContent\timeline.js" />
+    <EmbeddedResource Include="WebContent\util.js" />
+    <EmbeddedResource Include="WebContent\window.js" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.4\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('..\packages\SQLitePCLRaw.lib.e_sqlite3.2.0.4\build\net461\SQLitePCLRaw.lib.e_sqlite3.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

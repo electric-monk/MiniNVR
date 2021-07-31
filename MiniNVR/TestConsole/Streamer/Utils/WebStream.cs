@@ -39,7 +39,7 @@ namespace TestConsole.Streamer.Utils
             private readonly FrameSource frameSource;
             private readonly BlockingCollection<StreamWatcher.InfoEvent> queue;
             private readonly Thread thread;
-            private readonly Stream stream;
+            private readonly HttpListenerResponse response;
 
             public Streamer(FrameSource source, HttpListenerResponse response)
             {
@@ -51,7 +51,7 @@ namespace TestConsole.Streamer.Utils
                 response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
                 response.AddHeader("Pragma", "no-cache");
                 response.AddHeader("Expires", "0");
-                stream = response.OutputStream;
+                this.response = response;
                 thread.Start();
                 frameSource.OnFrameInfo += HandleFrameInfo;
             }
@@ -80,12 +80,19 @@ namespace TestConsole.Streamer.Utils
                         try {
                             if (!started) {
                                 started = true;
-                                mp4File.CreateEmptyMP4(info.StreamInfo).SaveTo(stream);
+                                // Set a header indicating the MIME type string that Media Streaming Extensions require, which contains info the file will also feed them
+                                // Per https://gist.github.com/jimkang/f23ce12c359c7465e83f
+                                byte ProfileIndication = info.StreamInfo.Sps[1];
+                                byte Compatibility = info.StreamInfo.Sps[2];
+                                byte LevelIndication = info.StreamInfo.Sps[3];
+                                response.AddHeader("X-MSE-Codec", String.Format("video/mp4; codecs=\"avc1.{0:X2}{1:X2}{2:X2}\"", ProfileIndication, Compatibility, LevelIndication));
+                                // After this point, headers will no longer be possible
+                                mp4File.CreateEmptyMP4(info.StreamInfo).SaveTo(response.OutputStream);
                             }
                             if (info is StreamWatcher.FrameSetEvent frames) {
                                 var boxes = mp4File.CreateChunk(frames.RawFrames);
                                 foreach (var box in boxes)
-                                    box.ToStream(stream);
+                                    box.ToStream(response.OutputStream);
                             }
                         }
                         catch (HttpListenerException) {
@@ -96,7 +103,7 @@ namespace TestConsole.Streamer.Utils
                 }
                 finally {
                     frameSource.OnFrames -= HandleFrames;
-                    stream.Close();
+                    response.OutputStream.Close();
                 }
             }
         }
