@@ -7,7 +7,7 @@ class Session {
     }
 
     _getStorageReq(storage, camera, start, end, getVideo) {
-        req = {};
+        let req = {};
         if (storage)
             req["storage"] = storage;
         if (camera)
@@ -84,6 +84,122 @@ class CameraMenu {
         scrubChildElements(this.menu.menu);
         for (let item in data)
             new CameraMenuItem(this.session, this.menu, item, data[item]);
+    }
+}
+
+class RecordingWindow extends PlainWindow {
+    constructor(session, identifier, info) {
+        super(400, 300);
+        this.session = session;
+        this.identifier = identifier;
+        this.info = info;
+        this.title.innerHTML = '<img src="/backup_devices_2-1.png">&nbsp;Playback: ' + this.info.title;
+
+        this.video = document.createElement("video");
+        this.video.classList.add('cameraView'); // TODO: Figure out how to make this good, with the video above the timeline instead of them sharing space
+        this.video.addEventListener('timeupdate', (event) => this.onTimeUpdate(event));
+        this.content.appendChild(this.video);
+
+        this.timeline = new RecordingParser();
+        this.timeline.display.control.style = "position: absolute; bottom: 0px; width: 100%";
+        this.content.appendChild(this.timeline.display.control);
+        this.timeline.display.control.onclick = (e) => this.timelineClick(e);
+
+        this.data = {};
+        let monitor = new DataMonitor('/storage', 1000, {'camera': this.identifier});
+        this.unsubscribe = monitor.subscribe((data) => this.onStorage(data));
+    }
+
+    closed() {
+        super.closed();
+        this.unsubscribe();
+    }
+
+    onStorage(data) {
+        this.data = data[this.identifier];
+        var subdata = {};
+        subdata[this.info.title] = this.data;
+        this.timeline.updateData(subdata);
+        // Parse into convenience data
+        this.chunks = [];
+        let pending = null;
+        for (let item of this.data) {
+            if (item.type == "start") {
+                pending = {'begin': new Date(item.timestamp), 'storage': item.storage};
+            } else if (item.type == "stop") {
+                if (pending) {
+                    pending['end'] = new Date(item.timestamp);
+                    this.chunks.push(pending);
+                    pending = null;
+                }
+            }
+        }
+    }
+
+    timelineClick(event) {
+        var item = event.target;
+        while (!item.classList.contains("TimeLine-RowCells"))
+            item = item.parentElement;
+        var clickTime = this.timeline.display._computeTime(event.clientX - item.getBoundingClientRect().left);
+        var endTime = new Date(clickTime.getTime() + (30 * 60 * 1000));
+        // Find video
+        let found = null;
+        for (let item of this.chunks) {
+            if (item.begin < clickTime && item.end > clickTime) {
+                found = item;
+                break;
+            }
+        }
+        if (found) {
+            this.mediaSource = this.session.getRecordingMediaSource(found.storage, this.identifier, clickTime, endTime);
+            this.mediaSource.updateVideo(this.video);
+            this.video.play();
+        } else {
+            this.video.src = null;
+        }
+        this.timeline.display.showRuler(null);
+    }
+
+    onTimeUpdate() {
+        if (this.mediaSource && this.mediaSource.startTime) {
+            console.log(this.mediaSource.startTime);
+            let curTime = new Date(this.mediaSource.startTime.valueOf() + (this.video.currentTime * 1000));
+            console.log(curTime);
+            this.timeline.display.showRuler(curTime);
+        }
+    }
+}
+
+class RecordingMenuItem extends MenuItem {
+    constructor(session, owner, identifier, info) {
+        super(owner);
+        this.session = session;
+        this.identifier = identifier;
+        this.info = info;
+        this.control.innerHTML = info.title;
+    }
+
+    selected() {
+        let win = new RecordingWindow(this.session, this.identifier, this.info);
+        document.body.appendChild(win.control);
+    }
+}
+
+class RecordingMenu {
+    constructor(session) {
+        this.menu = new Menu();
+        this.menu.button.control.innerHTML = '<img src="/backup_devices_2-0.png">';
+        this.session = session;
+        this.session.cameras.subscribe(data => this.update(data));
+
+        this.toolbarChild = this.menu.control;
+    }
+    
+    update(data) {
+        scrubChildElements(this.menu.menu);
+        for (let item in data)
+            if (data[item].record.length != 0)
+                new RecordingMenuItem(this.session, this.menu, item, data[item]);
     }
 }
 
@@ -520,5 +636,6 @@ function dologin() {
     var toolbar = new Toolbar();
     document.body.appendChild(toolbar.control);
     toolbar.attach(new CameraMenu(session));
+    toolbar.attach(new RecordingMenu(session));
     toolbar.attach(new SettingsButton(session));
 }

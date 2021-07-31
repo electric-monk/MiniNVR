@@ -48,7 +48,7 @@ namespace TestConsole.Streamer.Recorder
 
         public void SearchTimes(string identifier, DateTime? start, DateTime? end, bool getVideo, SearchResults callback)
         {
-            queue.Add(new FrameData(identifier) { Search = new SearchRequest() { Start = start, End = end, Callback = callback, GetVideoData = getVideo } });
+            queue.Add(new FrameData(identifier) { Search = new SearchRequest() { Start = start?.ToUniversalTime(), End = end?.ToUniversalTime(), Callback = callback, GetVideoData = getVideo } });
         }
 
         public Streamer.Utils.WebStream.FrameSource GetFrameSourceForRecording(string identifier, DateTime start)

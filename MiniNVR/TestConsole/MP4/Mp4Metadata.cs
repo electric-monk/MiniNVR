@@ -20,6 +20,18 @@ namespace TestConsole.MP4
 
         public abstract byte[] Pps { get; }
 
+        public byte ProfileIndication { get { return Sps[1]; } }
+        public byte Compatibility { get { return Sps[2]; } }
+        public byte LevelIndication { get { return Sps[3]; } }
+
+        public String MSEMimeType
+        {
+            get {
+                // Per https://gist.github.com/jimkang/f23ce12c359c7465e83f
+                return String.Format("video/mp4; codecs=\"avc1.{0:X2}{1:X2}{2:X2}\"", ProfileIndication, Compatibility, LevelIndication);
+            }
+        }
+
         public FrameSize Dimensions
         {
             get {

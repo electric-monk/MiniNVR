@@ -81,11 +81,7 @@ namespace TestConsole.Streamer.Utils
                             if (!started) {
                                 started = true;
                                 // Set a header indicating the MIME type string that Media Streaming Extensions require, which contains info the file will also feed them
-                                // Per https://gist.github.com/jimkang/f23ce12c359c7465e83f
-                                byte ProfileIndication = info.StreamInfo.Sps[1];
-                                byte Compatibility = info.StreamInfo.Sps[2];
-                                byte LevelIndication = info.StreamInfo.Sps[3];
-                                response.AddHeader("X-MSE-Codec", String.Format("video/mp4; codecs=\"avc1.{0:X2}{1:X2}{2:X2}\"", ProfileIndication, Compatibility, LevelIndication));
+                                response.AddHeader("X-MSE-Codec", info.StreamInfo.MSEMimeType);
                                 // After this point, headers will no longer be possible
                                 mp4File.CreateEmptyMP4(info.StreamInfo).SaveTo(response.OutputStream);
                             }

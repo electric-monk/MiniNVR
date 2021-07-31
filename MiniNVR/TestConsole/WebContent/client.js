@@ -20,11 +20,12 @@ function generateID() {
 }
 
 class DataMonitor {
-    constructor(url, period) {
+    constructor(url, period, body = null) {
         this.url = url;
         this.handlers = [];
         this.data = null;
         this.timer = null;
+        this.body = body;
         this.period = period;
     }
 
@@ -38,7 +39,7 @@ class DataMonitor {
                     that.update(data);
                 else
                     that.error(status);
-            });
+            }, this.body);
         }
     }
 
@@ -145,6 +146,7 @@ class MediaHelper extends DataGetter {
             var mimetype = value.headers.get("X-MSE-Codec");
             if (!mimetype)
                 console.log("Didn't get MSE MIME type from server, client will balk");
+            this.startTime = new Date(value.headers.get("X-StartTime"));  // For recordings only
             this.sourceBuffer = this.mediaSource.addSourceBuffer(mimetype);
             this.sourceBuffer.mode = "sequence";
             this.sourceBuffer.addEventListener("updateend", () => this._updateEnd());
@@ -168,7 +170,11 @@ class MediaHelper extends DataGetter {
 
     createVideo() {
         let video = document.createElement("video");
-        video.src = URL.createObjectURL(this.mediaSource);
+        this.updateVideo(video);
         return video;
+    }
+
+    updateVideo(video) {
+        video.src = URL.createObjectURL(this.mediaSource);
     }
 }

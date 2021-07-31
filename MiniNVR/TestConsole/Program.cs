@@ -68,11 +68,15 @@ namespace TestConsole
                     private void WorkerThread()
                     {
                         ItemState state = InitiateRequests(context.Request);
-                        while (state.expecting != 0)
-                            queue.Take().Update(ref state);
-                        state.TidyUp();
-                        state.GenerateResponse();
-                        queue.CompleteAdding();
+                        try {
+                            while (state.expecting != 0)
+                                queue.Take().Update(ref state);
+                        }
+                        finally {
+                            state.TidyUp();
+                            state.GenerateResponse();
+                            queue.CompleteAdding();
+                        }
                     }
 
                     private ItemState InitiateRequests(HttpListenerRequest request)
@@ -198,20 +202,24 @@ namespace TestConsole
                     private class StreamItemState : ItemState
                     {
                         private readonly MP4.Mp4Helper mp4Helper = new MP4.Mp4Helper();
-                        private readonly System.IO.Stream stream;
                         private StreamDataMaker maker = new StreamDataMaker();
                         public StreamItemState(HttpListenerContext context)
                         : base(context, "video/mp4")
                         {
-                            stream = context.Response.OutputStream;
                         }
                         public override void Update(TimeItem item)
                         {
                             if (maker != null) {
-                                if (item is Tag tag) {
+                                if (item is Start start) {
+                                    String jsonDate = JsonConvert.SerializeObject(start.Timestamp);
+                                    context.Response.AddHeader("X-StartTime", jsonDate.Substring(1, jsonDate.Length - 2));
+                                } else if (item is Tag tag) {
                                     maker.Add(tag);
                                     if (maker.Complete) {
-                                        mp4Helper.CreateEmptyMP4(maker).SaveTo(stream);
+                                        // For MSE, generate a MIME type
+                                        context.Response.AddHeader("X-MSE-Codec", maker.MSEMimeType);
+                                        // Continue as usual, no more headers
+                                        mp4Helper.CreateEmptyMP4(maker).SaveTo(context.Response.OutputStream);
                                         maker = null;
                                     }
                                 }
@@ -226,7 +234,7 @@ namespace TestConsole
                             if (maker == null) {
                                 var boxes = mp4Helper.CreateChunk(data);
                                 foreach (var box in boxes)
-                                    box.ToStream(stream);
+                                    box.ToStream(context.Response.OutputStream);
                             }
                         }
 
