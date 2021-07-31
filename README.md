@@ -16,11 +16,12 @@ I chose C# for managed safety, to protect from buffer overruns, underruns, gene
 - Web browser streaming - it can generate MP4 fragmented files on the fly.
 - Web interface - no client apps for maximum OS compatibility.
 - Retro '90s style - I've come to prefer this over the unpleasant flat nothingness currently popular in modern UI design.
+- Recording - recorded data can be viewed almost instantly
 
 ## TODOs
 
 In order:
-- Recording (this is currently WIP, you can create storage files and assign them to cameras and it'll record, but there's no web UI to playback and it occasionally crashes)
+- Bug fixes (recording works, but is a but unstable, and there's no 'export' button though it generates valid MP4 files for playback)
 - Events (these will be saved in tags on the recording, and appear on the timeline as highlights)
 - PTZ (should be simple)
 - Security (currently there's no login screen, should also be simple)
