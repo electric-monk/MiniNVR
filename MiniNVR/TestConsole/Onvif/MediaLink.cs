@@ -34,7 +34,11 @@ namespace TestConsole.Onvif
 
         public Uri GetStreamUri(Profile profile)
         {
-            Media.MediaUri uri = connection.GetStreamUri(new Media.StreamSetup(), profile.profile.token);
+            var setup = new Media.StreamSetup();
+            setup.Stream = Media.StreamType.RTPUnicast;
+            setup.Transport = new Media.Transport();
+            setup.Transport.Protocol = Media.TransportProtocol.UDP;
+            Media.MediaUri uri = connection.GetStreamUri(setup, profile.profile.token);
             return new Uri(uri.Uri);
         }
     }
