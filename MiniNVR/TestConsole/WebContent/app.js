@@ -162,9 +162,7 @@ class RecordingWindow extends PlainWindow {
 
     onTimeUpdate() {
         if (this.mediaSource && this.mediaSource.startTime) {
-            console.log(this.mediaSource.startTime);
             let curTime = new Date(this.mediaSource.startTime.valueOf() + (this.video.currentTime * 1000));
-            console.log(curTime);
             this.timeline.display.showRuler(curTime);
         }
     }
