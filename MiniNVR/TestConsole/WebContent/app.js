@@ -196,7 +196,7 @@ class RecordingMenu {
     update(data) {
         scrubChildElements(this.menu.menu);
         for (let item in data)
-            if (data[item].record.length != 0)
+            if (data[item].record && data[item].record.length != 0)
                 new RecordingMenuItem(this.session, this.menu, item, data[item]);
     }
 }
