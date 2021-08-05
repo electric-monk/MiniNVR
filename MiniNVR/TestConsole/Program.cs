@@ -72,6 +72,12 @@ namespace TestConsole
                             while (state.expecting != 0)
                                 queue.Take().Update(ref state);
                         }
+                        catch (HttpListenerException) {
+                            // Connection closed
+                        }
+                        catch (System.IO.IOException) {
+                            // Connection closed for mono
+                        }
                         finally {
                             state.TidyUp();
                             state.GenerateResponse();

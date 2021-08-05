@@ -95,6 +95,10 @@ namespace TestConsole.Streamer.Utils
                             // This means the client dropped, which is expected and means we just need to tidy up
                             break;
                         }
+                        catch (System.IO.IOException) {
+                            // This means the client dropped, but on mono, which generates the wrong exceptions in HttpListener
+                            break;
+                        }
                     }
                 }
                 finally {
