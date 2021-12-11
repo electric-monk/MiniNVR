@@ -21,7 +21,6 @@ namespace TestConsole.Configuration
             public CredentialInfo Credentials;
             [XmlElement("Storage")]
             public string StorageIdentifier;
-            public Users.Allowance Permissions;
         }
 
         [XmlArray("Cameras")]

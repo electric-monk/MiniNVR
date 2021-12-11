@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
+using TestConsole.Configuration;
 using TestConsole.Streamer.Utils;
 
 namespace TestConsole
@@ -18,6 +19,8 @@ namespace TestConsole
 
             public Server()
             {
+                User.Initialise(web.Server);
+
                 cameraManager = new Streamer.CameraManager(storageManager);
                 web.Server.AddContent("/storage", new StorageWrapper(storageManager));
 

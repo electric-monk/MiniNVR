@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Net;
+using System.IO;
 
 namespace TestConsole
 {
@@ -63,6 +64,26 @@ namespace TestConsole
                 response.OutputStream.Write(Content, 0, Content.Length);
                 response.Close();
             }
+        }
+
+        public static Dictionary<string, string> ParseForm(string s)
+        {
+            Dictionary<string, string> result = new Dictionary<string, string>();
+            if (s.Length == 0)
+                return result;
+            var parts = s.Split('&');
+            foreach (var part in parts)
+            {
+                var kvp = part.Split('=');
+                result.Add(Uri.UnescapeDataString(kvp[0]), Uri.UnescapeDataString(kvp[1]));
+            }
+            return result;
+        }
+
+        public static Dictionary<string, string> GetForm(Stream inputStream)
+        {
+            using (StreamReader reader = new StreamReader(inputStream))
+                return ParseForm(reader.ReadToEnd());
         }
 
         private readonly HttpListener listener;

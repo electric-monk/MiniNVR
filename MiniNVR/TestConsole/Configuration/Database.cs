@@ -14,7 +14,6 @@ namespace TestConsole.Configuration
         private int changing = 0;
         private int dirty = 0;
 
-        public Users Users;
         public Cameras Cameras;
         public Storage Storage;
 
@@ -22,9 +21,6 @@ namespace TestConsole.Configuration
 
         private void Connect()
         {
-            if (Users == null)
-                Users = new Users();
-            //Users.OnChange += (s, e) => Save();
             if (Cameras == null)
                 Cameras = new Cameras();
             Cameras.OnUpdated += (s, e) => Save();
