@@ -63,15 +63,14 @@ namespace TestConsole
                     Identifier = cameraData["identifier"],
                     FriendlyName = cameraData["title"],
                     Endpoint = cameraData["endpoint"],
-                };
+                    StorageIdentifier = cameraData["record"],
+            };
                 if ((cameraData["username"].Length != 0) || (cameraData["password"].Length != 0)) {
                     camera.Credentials = new Configuration.Cameras.Camera.CredentialInfo() {
                         Username = cameraData["username"],
                         Password = cameraData["password"],
                     };
                 }
-                if (cameraData["record"] != "")
-                    camera.StorageIdentifier = cameraData["record"];
                 Configuration.Database.Instance.Cameras.Add(camera);
 
                 Reply(request, true);
