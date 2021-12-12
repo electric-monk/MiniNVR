@@ -26,6 +26,7 @@ namespace TestConsole
                 response.ContentType = "text/json";
                 response.OutputStream.Write(result, 0, result.Length);
                 response.OutputStream.Close();
+                response.Close();
             }
         }
 
@@ -87,7 +88,7 @@ namespace TestConsole
         {
             public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
             {
-                if (Configuration.User.Instance.IsAdmin(session)) {
+                if (!Configuration.User.Instance.IsAdmin(session)) {
                     request.Response.StatusCode = 403;
                     Reply(request, "Forbidden");
                     return;
@@ -135,7 +136,7 @@ namespace TestConsole
         {
             public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
             {
-                if (Configuration.User.Instance.IsAdmin(session)) {
+                if (!Configuration.User.Instance.IsAdmin(session)) {
                     request.Response.StatusCode = 403;
                     Reply(request, "Forbidden");
                     return;
@@ -174,7 +175,7 @@ namespace TestConsole
 
             public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
             {
-                if (Configuration.User.Instance.IsAdmin(session)) {
+                if (!Configuration.User.Instance.IsAdmin(session)) {
                     request.Response.StatusCode = 403;
                     Reply(request, "Forbidden");
                     return;
