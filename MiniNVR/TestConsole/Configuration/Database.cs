@@ -80,7 +80,7 @@ namespace TestConsole.Configuration
                 }
                 Console.WriteLine("Saving settings");
                 XmlSerializer serialiser = new XmlSerializer(typeof(Database));
-                using (TextWriter writer = new StreamWriter(Filename))
+                using (TextWriter writer = new StreamWriter(GetSettingsPath(Filename)))
                     serialiser.Serialize(writer, this);
             }
         }
