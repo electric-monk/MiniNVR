@@ -36,6 +36,10 @@ class Session {
     getLiveMediaSource(identifier) {
         return this._loadMediaSource("/stream-" + identifier);
     }
+
+    getSessionInfo(callback) {
+        exchangeJSON("/session", (status, data) => callback((status == 200) ? data : null));
+    }
 }
 
 class Toolbar {
@@ -558,19 +562,6 @@ class StorageSettings extends ListAndDetails {
     }
 }
 
-class UserSettings extends ListAndDetails {
-    constructor(container, session) {
-        super(container);
-        this.session = session;
-    }
-
-    connect() {
-    }
-
-    disconnect() {
-    }
-}
-
 class Settings extends PlainWindow {
     constructor(session) {
         super(400, 300, WIN_TITLE | WIN_MOVABLE | WIN_CLOSABLE | WIN_ACTIVATE | WIN_SIZABLE);
@@ -586,10 +577,6 @@ class Settings extends PlainWindow {
         // Storage
         var storage = new TabItem(this.tabs, "Storage");
         this.parts.push(new StorageSettings(storage.content, session));
-
-        // Users
-        var users = new TabItem(this.tabs, "Users");
-        this.parts.push(new UserSettings(users.content, session));
 
         // About
         var about = new TabItem(this.tabs, "About");
@@ -629,6 +616,15 @@ class SettingsButton extends Button {
     }
 }
 
+class LoginLink {
+    constructor(link, label) {
+        this.toolbarChild = document.createElement("div");
+        this.toolbarChild.classList.add("loginLink");
+        this.toolbarChild.innerHTML = "<a href=\"" + link + "\">" + label + "</a>&nbsp;";
+        this.toolbarChild._object = this;
+    }
+}
+
 function dologin() {
     var session = new Session();
     var toolbar = new Toolbar();
@@ -636,4 +632,8 @@ function dologin() {
     toolbar.attach(new CameraMenu(session));
     toolbar.attach(new RecordingMenu(session));
     toolbar.attach(new SettingsButton(session));
+    session.getSessionInfo((data) => {
+        if (data != null)
+            toolbar.attach(new LoginLink(data['management'], data['username']));
+    });
 }

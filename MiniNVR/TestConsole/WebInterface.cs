@@ -60,6 +60,17 @@ namespace TestConsole
             }
         }
 
+        public class SessionDataContent : SessionJSONEndpoint
+        {
+            public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
+            {
+                Reply(request, new Dictionary<string, string>{
+                    { "username", session.Username },
+                    { "management", session.AuthenticationProvider.ManagementLink },
+                });
+            }
+        }
+
         private class CameraListEndpoint : SessionJSONEndpoint
         {
             public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
@@ -242,6 +253,7 @@ namespace TestConsole
             WebServer.StaticContent.LoadAll("", server);
             server.AddContent("/", WebServer.Load<SessionStaticContent>("index.html"));
             server.AddContent("/index.html", WebServer.Load<SessionStaticContent>("index.html"));
+            server.AddContent("/session", new SessionDataContent());
             server.AddContent("/discovery", new DiscoveryEndpoint());
             server.AddContent("/updateCamera", new CameraUpdateEndpoint());
             server.AddContent("/allCameras", new CameraListEndpoint());
