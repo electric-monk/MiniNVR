@@ -31,10 +31,11 @@ namespace TestConsole.Configuration
 
         private static Database Load()
         {
+            Console.WriteLine("Using settings directory: " + GetSettingsPath(""));
             Database result;
             try {
                 XmlSerializer serialiser = new XmlSerializer(typeof(Database));
-                using (TextReader reader = new StreamReader(Filename))
+                using (TextReader reader = new StreamReader(GetSettingsPath(Filename)))
                     result = (Database)serialiser.Deserialize(reader);
                 Console.WriteLine("Settings loaded");
             }
@@ -82,6 +83,11 @@ namespace TestConsole.Configuration
                 using (TextWriter writer = new StreamWriter(Filename))
                     serialiser.Serialize(writer, this);
             }
+        }
+
+        internal static string GetSettingsPath(string filename)
+        {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), filename);
         }
     }
 }

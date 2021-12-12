@@ -19,7 +19,7 @@ namespace TestConsole.Configuration
         private User(WebServer server)
         {
             manager = new SessionManager("MiniNVR", server);
-            Users.Configuration.Load(manager, "authentication.xml");
+            Users.Configuration.Load(manager, Database.GetSettingsPath("authentication.xml"));
         }
 
         public static void Initialise(WebServer server)

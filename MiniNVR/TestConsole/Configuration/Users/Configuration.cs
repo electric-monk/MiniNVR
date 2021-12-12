@@ -27,7 +27,7 @@ namespace TestConsole.Configuration.Users
                 config = new Configuration(){
                     PlainConfig = new PlainLogin.PLConfig(){
                         Salt = sessionManager.AppName,
-                        UserFilename = DEFAULT_FILENAME,
+                        UserFilename = Database.GetSettingsPath(DEFAULT_FILENAME),
                     },
                 };
             }
