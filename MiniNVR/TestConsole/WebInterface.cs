@@ -29,31 +29,69 @@ namespace TestConsole
             }
         }
 
-        private class CameraListEndpoint : JSONEndpoint
+        public abstract class SessionJSONEndpoint : JSONEndpoint
+        {
+            public abstract void Handle(HttpListenerContext request, Configuration.Users.ISession session);
+
+            public sealed override void Handle(HttpListenerContext request)
+            {
+                var session = Configuration.User.Instance.Manager.GetSession(request.Request);
+                if (session == null) {
+                    request.Response.StatusCode = 403;
+                    Reply(request, "Forbidden");
+                } else {
+                    Handle(request, session);
+                }
+            }
+        }
+
+        public class SessionStaticContent : WebServer.StaticContent
         {
             public override void Handle(HttpListenerContext request)
             {
+                var session = Configuration.User.Instance.Manager.GetSession(request.Request);
+                if (session == null) {
+                    request.Response.Redirect(Configuration.User.Instance.Manager.LoginURL);
+                    request.Response.Close();
+                } else {
+                    base.Handle(request);
+                }
+            }
+        }
+
+        private class CameraListEndpoint : SessionJSONEndpoint
+        {
+            public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
+            {
                 Dictionary<string, Dictionary<string, object>> values = new Dictionary<string, Dictionary<string, object>>();
                 foreach (var camera in Configuration.Database.Instance.Cameras.AllCameras) {
-                    Dictionary<string, object> properties = new Dictionary<string, object>();
-                    properties["title"] = camera.FriendlyName;
-                    properties["endpoint"] = camera.Endpoint;
-                    if (camera.Credentials != null) {
-                        properties["username"] = camera.Credentials.Username;
-                        properties["password"] = camera.Credentials.Password;
+                    if (Configuration.User.Instance.HasAccess(session, camera)) {
+                        Dictionary<string, object> properties = new Dictionary<string, object>();
+                        properties["title"] = camera.FriendlyName;
+                        properties["endpoint"] = camera.Endpoint;
+                        if (camera.Credentials != null)
+                        {
+                            properties["username"] = camera.Credentials.Username;
+                            properties["password"] = camera.Credentials.Password;
+                        }
+                        if (camera.StorageIdentifier != null)
+                            properties["record"] = camera.StorageIdentifier;
+                        values.Add(camera.Identifier, properties);
                     }
-                    if (camera.StorageIdentifier != null)
-                        properties["record"] = camera.StorageIdentifier;
-                    values.Add(camera.Identifier, properties);
                 }
                 Reply(request, values);
             }
         }
 
-        private class CameraUpdateEndpoint : JSONEndpoint
+        private class CameraUpdateEndpoint : SessionJSONEndpoint
         {
-            public override void Handle(HttpListenerContext request)
+            public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
             {
+                if (Configuration.User.Instance.IsAdmin(session)) {
+                    request.Response.StatusCode = 403;
+                    Reply(request, "Forbidden");
+                    return;
+                }
                 string body;
                 using (var reader = new System.IO.StreamReader(request.Request.InputStream, request.Request.ContentEncoding))
                     body = reader.ReadToEnd();
@@ -64,7 +102,7 @@ namespace TestConsole
                     FriendlyName = cameraData["title"],
                     Endpoint = cameraData["endpoint"],
                     StorageIdentifier = cameraData["record"],
-            };
+                };
                 if ((cameraData["username"].Length != 0) || (cameraData["password"].Length != 0)) {
                     camera.Credentials = new Configuration.Cameras.Camera.CredentialInfo() {
                         Username = cameraData["username"],
@@ -77,9 +115,9 @@ namespace TestConsole
             }
         }
 
-        private class StorageListEndpoint : JSONEndpoint
+        private class StorageListEndpoint : SessionJSONEndpoint
         {
-            public override void Handle(HttpListenerContext request)
+            public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
             {
                 Dictionary<string, Dictionary<string, object>> values = new Dictionary<string, Dictionary<string, object>>();
                 foreach (var container in Configuration.Database.Instance.Storage.AllContainers) {
@@ -93,10 +131,15 @@ namespace TestConsole
             }
         }
 
-        private class StorageUpdateEndpoint : JSONEndpoint
+        private class StorageUpdateEndpoint : SessionJSONEndpoint
         {
-            public override void Handle(HttpListenerContext request)
+            public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
             {
+                if (Configuration.User.Instance.IsAdmin(session)) {
+                    request.Response.StatusCode = 403;
+                    Reply(request, "Forbidden");
+                    return;
+                }
                 string body;
                 using (var reader = new System.IO.StreamReader(request.Request.InputStream, request.Request.ContentEncoding))
                     body = reader.ReadToEnd();
@@ -114,7 +157,7 @@ namespace TestConsole
             }
         }
 
-        private class DiscoveryEndpoint : JSONEndpoint
+        private class DiscoveryEndpoint : SessionJSONEndpoint
         {
             private readonly Onvif.Discoverer discoverer;
             private readonly List<Onvif.Discoverer.Device> devices;
@@ -129,8 +172,13 @@ namespace TestConsole
                 timeoutTimer = new Timer(TimeoutCallback);
             }
 
-            public override void Handle(HttpListenerContext request)
+            public override void Handle(HttpListenerContext request, Configuration.Users.ISession session)
             {
+                if (Configuration.User.Instance.IsAdmin(session)) {
+                    request.Response.StatusCode = 403;
+                    Reply(request, "Forbidden");
+                    return;
+                }
                 lock (timeoutTimer) {
                     if (token == null)
                         token = discoverer.AddWatcher(new Watcher(devices));
@@ -190,8 +238,9 @@ namespace TestConsole
         public WebInterface()
         {
             server = new WebServer(12345, 32, 100);
-            server.AddContent("/", WebServer.StaticContent.Load("index.html"));
             WebServer.StaticContent.LoadAll("", server);
+            server.AddContent("/", WebServer.Load<SessionStaticContent>("index.html"));
+            server.AddContent("/index.html", WebServer.Load<SessionStaticContent>("index.html"));
             server.AddContent("/discovery", new DiscoveryEndpoint());
             server.AddContent("/updateCamera", new CameraUpdateEndpoint());
             server.AddContent("/allCameras", new CameraListEndpoint());

@@ -5,8 +5,10 @@ namespace TestConsole.Configuration
     public class Cameras : ConfigurableList<Cameras.Camera>
     {
 
-        public class Camera : BaseType
+        public class Camera : BaseType, User.IAccessibleDevice
         {
+            private string[] _groups;
+
             public class CredentialInfo
             {
                 public string Username;
@@ -21,6 +23,17 @@ namespace TestConsole.Configuration
             public CredentialInfo Credentials;
             [XmlElement("Storage")]
             public string StorageIdentifier;
+            public string[] Groups
+            {
+                get
+                {
+                    return _groups;
+                }
+                set
+                {
+                    _groups = value;
+                }
+            }
         }
 
         [XmlArray("Cameras")]
