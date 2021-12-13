@@ -24,6 +24,7 @@ namespace TestConsole.Streamer
         private CancellationTokenSource cancellationTokenSource;
 
         public string Identifier { get { return settings.Identifier; } }
+        public string StorageIdentifier { get { return settings.StorageIdentifier; } }
 
         internal Camera(Configuration.Cameras.Camera camera)
         {
@@ -111,10 +112,6 @@ namespace TestConsole.Streamer
                     Thread.Sleep(1000);
                 }
             } while (streamUri == null);
-            while (!stop.IsSet) {
-                // TODO: Some sort of ongoing work? Or are we done?
-                Thread.Sleep(1000);
-            }
         }
 
         private void StartStream()
@@ -158,6 +155,7 @@ namespace TestConsole.Streamer
 
         private async Task StreamAsync(CancellationToken cancellationToken)
         {
+            Console.WriteLine($"RTSP[{settings.Identifier}] initialising");
             try {
                 TimeSpan delay = TimeSpan.FromSeconds(5);
                 while (streamUri == null)
@@ -170,24 +168,27 @@ namespace TestConsole.Streamer
                             await rtspClient.ConnectAsync(cancellationToken);
                         }
                         catch (RtspClientSharp.Rtsp.RtspClientException e) {
-                            Console.WriteLine("RTSP client connection error: " + e.ToString());
+                            Console.WriteLine("RTSP client connection error\nException: " + e.ToString());
                             await Task.Delay(delay, cancellationToken);
                             // Restart attempt
                             continue;
                         }
+                        Console.WriteLine($"RTSP[{settings.Identifier}] started");
                         try {
                             await rtspClient.ReceiveAsync(cancellationToken);
                         }
                         catch (RtspClientSharp.Rtsp.RtspClientException e) {
-                            Console.WriteLine("RTSP client receive error: " + e.ToString());
-                            await Task.Delay(delay, cancellationToken);
+                            Console.WriteLine("RTSP client receive error\nException: " + e.ToString());
+//                            await Task.Delay(delay, cancellationToken);
                         }
+                        Console.WriteLine($"RTSP[{settings.Identifier}] stopped ");
                     }
                 }
             }
             catch (OperationCanceledException) {
                 // No need to do anything, this is an expected exception
             }
+            Console.WriteLine($"RTSP[{settings.Identifier}] shut down");
         }
     }
 }

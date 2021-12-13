@@ -19,11 +19,15 @@ namespace TestConsole.Streamer
 
         private void AddCamera(Configuration.Cameras.Camera camera)
         {
+            // Remove old instance, if present
+            RemoveCamera(camera);
+            // Re-add
             Camera solidCamera = new Camera(camera);
             cameras.Add(solidCamera);
             if (camera.StorageIdentifier != null) {
                 Recorder.DataFile dataFile = storage.GetStorage(camera.StorageIdentifier);
                 if (dataFile != null) {
+                    System.Console.WriteLine($"Storage[{camera.StorageIdentifier}] recording camera {camera.Identifier}");
                     recordings.Add(camera.Identifier, dataFile);
                     solidCamera.OnFrames += RecordFrames;
                 }
@@ -44,6 +48,7 @@ namespace TestConsole.Streamer
             toRemove.Reverse();
             foreach (var j in toRemove) {
                 if (recordings.ContainsKey(cameras[j].Identifier)) {
+                    System.Console.WriteLine($"Storage[{cameras[j].StorageIdentifier}] stopping for camera {camera.Identifier}");
                     cameras[j].OnFrames -= RecordFrames;
                     recordings.Remove(cameras[j].Identifier);
                 }
