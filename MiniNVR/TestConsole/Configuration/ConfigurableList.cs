@@ -14,7 +14,16 @@ namespace TestConsole.Configuration
 
             public virtual bool Equals(BaseType other)
             {
+                if (other == null)
+                    return false;
                 return Identifier == other.Identifier;
+            }
+
+            public override bool Equals(object other) => Equals(other as BaseType);
+
+            public override int GetHashCode()
+            {
+                return Identifier.GetHashCode();
             }
         }
 
