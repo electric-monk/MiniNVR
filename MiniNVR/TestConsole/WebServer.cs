@@ -31,7 +31,9 @@ namespace TestConsole
                     result.Content = output.ToArray();
                 }
             }
-            result.MimeType = System.Web.MimeMapping.GetMimeMapping(name);
+            // FIXME: Website doesn't work.
+            // result.MimeType = System.Web.MimeMapping.GetMimeMapping(name);
+            result.MimeType = "test/html";
             if (result.MimeType.StartsWith("text"))
                 result.MimeType += "; charset=utf-8";
             return result;
